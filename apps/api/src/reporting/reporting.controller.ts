@@ -16,9 +16,7 @@ import { EntitlementService } from '../subscription/entitlement.service';
 import { JoiValidationPipe } from '../common/validation/joi-validation.pipe';
 import { ReportingService } from './reporting.service';
 import {
-  paginationSchema,
   storeIdQuerySchema,
-  daysQuerySchema,
   lowStockThresholdQuerySchema,
 } from '../common/validation/schemas';
 
@@ -42,15 +40,26 @@ export class ReportingController {
   ) {
     const user = request.user;
     if (!user) throw new UnauthorizedException('Authenticated user context is required.');
-    if (storeId) this.tenantContext.ensureTenantAccess(request, user.tenantId, storeId);
     const context = await this.entitlementService.getContext(user.tenantId);
     this.entitlementService.assertModuleAccess(user, context, 'analytics');
+
+    // Enforce store scope: user can only request reports for stores they have access to
+    const effectiveStoreIds = user.allStoreAccess
+      ? undefined
+      : user.storeIds;
+    if (storeId) {
+      this.tenantContext.ensureTenantAccess(request, user.tenantId, storeId);
+      if (!user.allStoreAccess && !user.storeIds.includes(storeId)) {
+        throw new UnauthorizedException('Store is outside your assigned scope.');
+      }
+    }
+
     const now = new Date();
     const start = startDate || new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
     const end = endDate || now.toISOString().split('T')[0];
     return this.reportingService.getSalesSummary(user.tenantId, {
       storeId,
-      storeIds: user.allStoreAccess ? undefined : user.storeIds,
+      storeIds: effectiveStoreIds,
       startDate: start,
       endDate: end,
     });
@@ -83,11 +92,25 @@ export class ReportingController {
     @Req() request: RequestWithUser,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('storeId') storeId?: string,
   ) {
     const user = request.user;
     if (!user) throw new UnauthorizedException('Authenticated user context is required.');
     const context = await this.entitlementService.getContext(user.tenantId);
     this.entitlementService.assertModuleAccess(user, context, 'analytics');
+
+    // Enforce store scope
+    if (storeId) {
+      this.tenantContext.ensureTenantAccess(request, user.tenantId, storeId);
+      if (!user.allStoreAccess && !user.storeIds.includes(storeId)) {
+        throw new UnauthorizedException('Store is outside your assigned scope.');
+      }
+    }
+
+    const effectiveStoreIds = user.allStoreAccess
+      ? (storeId ? [storeId] : undefined)
+      : (storeId ? [storeId] : user.storeIds);
+
     const now = new Date();
     const start = startDate || new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
     const end = endDate || now.toISOString().split('T')[0];
@@ -95,7 +118,7 @@ export class ReportingController {
       user.tenantId,
       start,
       end,
-      user.allStoreAccess ? undefined : user.storeIds,
+      effectiveStoreIds,
     );
   }
 }

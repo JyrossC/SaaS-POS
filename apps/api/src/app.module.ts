@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -16,6 +17,9 @@ import { PharmacyModule } from './pharmacy/pharmacy.module';
 import { ReportingModule } from './reporting/reporting.module';
 import { AIModule } from './ai/ai.module';
 import { JobsModule } from './jobs/jobs.module';
+import { LoggingModule } from './logging/logging.module';
+import { HealthController } from './health/health.controller';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
 @Module({
   imports: [
@@ -33,8 +37,16 @@ import { JobsModule } from './jobs/jobs.module';
     AIModule,
     JobsModule,
     PlatformModule,
+    LoggingModule,
   ],
-  controllers: [AppController],
-  providers: [AppService, PermissionGuard],
+  controllers: [AppController, HealthController],
+  providers: [
+    AppService,
+    PermissionGuard,
+    {
+      provide: APP_FILTER,
+      useClass: GlobalExceptionFilter,
+    },
+  ],
 })
 export class AppModule {}

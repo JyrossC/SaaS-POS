@@ -2,6 +2,7 @@
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { PaymentProviderName, PlatformPaymentProviderConfig } from './platform.types';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 
 export type PublicPlatformPaymentProvider = {
   id: string;
@@ -51,6 +52,7 @@ export class PlatformPaymentProviderService {
   async upsert(
     provider: PaymentProviderName,
     input: PlatformPaymentProviderConfig,
+    actorPlatformAdminId?: string | null,
   ): Promise<PublicPlatformPaymentProvider> {
     const existing = await this.prisma.platformPaymentProvider.findUnique({
       where: { provider },
@@ -83,7 +85,196 @@ export class PlatformPaymentProviderService {
       },
     });
 
+    await this.prisma.platformAuditLog.create({
+      data: {
+        actorPlatformAdminId,
+        action: existing
+          ? 'payment_provider.updated'
+          : 'payment_provider.created',
+        resource: 'platform_payment_provider',
+        resourceId: record.id,
+        metadata: {
+          provider,
+          isEnabled: record.isEnabled,
+          isSandbox: record.isSandbox,
+          changed: existing ? Object.keys(input).filter((k) => {
+            const existingVal = (existing as any)[k];
+            const inputVal = (input as any)[k];
+            return JSON.stringify(existingVal) !== JSON.stringify(inputVal);
+          }) : ['all'],
+        },
+      },
+    });
+
     return this.toPublic(record);
+  }
+
+  /**
+   * Handle an inbound payment provider webhook.
+   *
+   * Idempotency: if a payment already exists for the same invoice and providerRef,
+   * the webhook is treated as a duplicate and no new payment is created.
+   *
+   * Signature verification: the raw request body must be verified using the
+   * provider's configured secretKey via HMAC-SHA256 before this method is called.
+   *
+   * Reconciliation: matches the webhook payment to a pending invoice and marks it PAID.
+   */
+  async handleWebhook(
+    provider: PaymentProviderName,
+    input: {
+      eventType: string;
+      providerRef: string;
+      invoiceId?: string | null;
+      amount: string;
+      currency: string;
+      status: 'PAID' | 'FAILED' | 'CANCELED' | 'PENDING';
+      metadata?: Record<string, unknown> | null;
+    },
+  ) {
+    const providerRecord = await this.prisma.platformPaymentProvider.findUnique({
+      where: { provider },
+    });
+
+    if (!providerRecord || !providerRecord.isEnabled) {
+      throw new NotFoundException(`Payment provider ${provider} is not configured or enabled.`);
+    }
+
+    // Idempotency: check if a payment already exists for this invoice + providerRef
+    if (input.invoiceId) {
+      const existingPayment = await this.prisma.subscriptionPayment.findFirst({
+        where: {
+          invoiceId: input.invoiceId,
+          providerReference: input.providerRef,
+        },
+      });
+      if (existingPayment) {
+        return {
+          idempotent: true,
+          paymentId: existingPayment.id,
+          invoiceId: existingPayment.invoiceId,
+          status: existingPayment.status,
+          message: 'Payment already recorded for this webhook event.',
+        };
+      }
+    }
+
+    // Resolve invoice
+    let invoice = null;
+    if (input.invoiceId) {
+      invoice = await this.prisma.subscriptionInvoice.findFirst({
+        where: { id: input.invoiceId },
+      });
+      if (!invoice) {
+        throw new NotFoundException(`Invoice ${input.invoiceId} not found.`);
+      }
+    }
+
+    // Resolve tenant from invoice
+    const tenantId = invoice?.tenantId;
+
+    return this.prisma.$transaction(async (tx) => {
+      // Determine target invoice for payment (use provided invoiceId)
+      const targetInvoice = invoice || await tx.subscriptionInvoice.findFirst({
+        where: { providerRef: input.providerRef },
+      });
+
+      if (!targetInvoice) {
+        throw new NotFoundException(`No invoice found for provider reference ${input.providerRef}.`);
+      }
+
+      const paymentData: Prisma.SubscriptionPaymentCreateInput = {
+        invoice: { connect: { id: targetInvoice.id } },
+        amount: new Prisma.Decimal(input.amount),
+        currency: input.currency,
+        status: input.status,
+        providerReference: input.providerRef,
+        provider: { connect: { id: providerRecord.id } },
+      };
+      if (input.metadata !== undefined && input.metadata !== null) {
+        paymentData.metadata = input.metadata as Prisma.InputJsonValue;
+      }
+
+      const payment = await tx.subscriptionPayment.create({
+        data: paymentData,
+      });
+
+      // Reconcile invoice status
+      if (input.status === 'PAID') {
+        await tx.subscriptionInvoice.update({
+          where: { id: targetInvoice.id },
+          data: { status: 'PAID', paidAt: new Date() },
+        });
+      } else if (input.status === 'FAILED') {
+        await tx.subscriptionInvoice.update({
+          where: { id: targetInvoice.id },
+          data: { status: 'FAILED' },
+        });
+      } else if (input.status === 'CANCELED') {
+        await tx.subscriptionInvoice.update({
+          where: { id: targetInvoice.id },
+          data: { status: 'VOIDED' },
+        });
+      }
+
+      await tx.platformAuditLog.create({
+        data: {
+          action: 'payment.webhook_received',
+          resource: 'subscription_payment',
+          resourceId: payment.id,
+          metadata: {
+            provider,
+            eventType: input.eventType,
+            providerRef: input.providerRef,
+            invoiceId: targetInvoice.id,
+            tenantId,
+            amount: input.amount,
+            status: input.status,
+            idempotent: false,
+          },
+        },
+      });
+
+      return {
+        idempotent: false,
+        paymentId: payment.id,
+        invoiceId: targetInvoice.id,
+        status: payment.status,
+        message: 'Payment recorded and invoice reconciled.',
+      };
+    });
+  }
+
+  /**
+   * Verify an HMAC-SHA256 webhook signature against the provider's configured secretKey.
+   * Returns true if the signature is valid.
+   */
+  async verifyWebhookSignature(
+    provider: PaymentProviderName,
+    payload: string,
+    signature: string,
+  ): Promise<boolean> {
+    const hmacParts = signature.split('=');
+    const providedSignature = hmacParts[hmacParts.length - 1];
+
+    const record = await this.prisma.platformPaymentProvider.findUnique({
+      where: { provider },
+    });
+
+    if (!record || !record.secretKey) {
+      return false;
+    }
+
+    const expected = this.computeHmacSha256(record.secretKey, payload);
+    return this.timingSafeEqual(expected, providedSignature);
+  }
+
+  private computeHmacSha256(secret: string, payload: string): string {
+    return createHmac('sha256', secret).update(payload).digest('hex');
+  }
+
+  private timingSafeEqual(a: string, b: string): boolean {
+    return timingSafeEqual(Buffer.from(a), Buffer.from(b));
   }
 
   private resolveDisplayName(

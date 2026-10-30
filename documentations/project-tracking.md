@@ -80,7 +80,7 @@ The following constraints are non-negotiable and drive every phase:
   - tenant administration (Complete)
   - commerce operations (Complete)
   - pharmacy operations (Complete)
-  - reporting and AI analysis (Complete)
+  - reporting and AI analysis (Complete — reporting implemented; AI is rule-based classification, not ML/forecasting)
 
 ## 5. Delivery phases
 
@@ -92,8 +92,8 @@ The following constraints are non-negotiable and drive every phase:
 | Phase 4 | Subscription and entitlement engine | Complete (concurrency-safe limits enforced) |
 | Phase 5 | Core retail operations | Complete |
 | Phase 6 | Pharmacy operations | Complete |
-| Phase 7 | Business intelligence | Complete |
-| Phase 8 | AI analytics | Complete |
+| Phase 7 | Business intelligence | Complete (gross profit and export not yet implemented) |
+| Phase 8 | AI analytics | Complete (rule-based classification; no forecasting or ML) |
 
 ## 6. Current milestone gate
 

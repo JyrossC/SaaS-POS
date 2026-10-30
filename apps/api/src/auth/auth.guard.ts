@@ -29,8 +29,31 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Malformed authentication token.');
     }
 
-    const token = this.authService.verifyToken(match[1]);
-    request.user = await this.authService.resolvePrincipal(token.userId, token.membershipId);
+    const token = match[1];
+
+    // Verify signature and structure (synchronous)
+    let payload: { sub: string; membershipId: string };
+    try {
+      const verified = this.authService.verifyTokenSilent(token);
+      if (!verified) {
+        throw new UnauthorizedException('Invalid or expired authentication token.');
+      }
+      payload = verified;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
+      throw new UnauthorizedException('Invalid or expired authentication token.');
+    }
+
+    // Token revocation check (asynchronous)
+    const isRevoked = await this.authService.isTokenRevoked(token);
+    if (isRevoked) {
+      throw new UnauthorizedException('Token has been revoked. Please sign in again.');
+    }
+
+    request.user = await this.authService.resolvePrincipal(
+      payload.sub,
+      payload.membershipId,
+    );
     return true;
   }
 }

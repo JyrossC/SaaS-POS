@@ -4,6 +4,16 @@ import {
 import { PrismaService } from '../database/prisma.service';
 import { ReportingService } from '../reporting/reporting.service';
 
+/**
+ * AI analytics service — rule-based query classification and reporting.
+ *
+ * This service does NOT use machine learning, forecasting models, or external AI providers.
+ * It classifies natural-language queries using keyword matching (rule-based routing) and
+ * returns read-only analytical data from the reporting service. All outputs are advisory,
+ * tenant-scoped, and subject to entitlement checks. No forecasting, confidence scoring,
+ * or replenishment recommendations are provided.
+ */
+
 export interface AIQueryRequest {
   query: string;
   storeId?: string;

@@ -153,7 +153,11 @@ Implement reports and operational analytics.
 - dashboard metrics and formulas
 - store comparisons and sales reports
 - low-stock and expiry exposure views
-- exports and reporting patterns
+- reporting patterns
+
+**Not implemented (future work):**
+- exports (CSV/PDF)
+- gross profit and margin reports
 
 ### Exit criteria
 
@@ -163,7 +167,7 @@ Implement reports and operational analytics.
 
 ## Phase 8: AI analytics
 
-### Status: Complete
+### Status: Complete (rule-based implementation)
 
 ### Goal
 
@@ -171,17 +175,22 @@ Introduce approved analytical support with strict controls.
 
 ### Deliverables
 
-- sales forecasting and inventory recommendations
+- rule-based query classification for analytical reporting
 - AI analytics service with explicit data boundaries
-- explanation and uncertainty handling
+- explanation handling (rule-based summaries, no confidence scoring)
 - policy and access enforcement
 - monitoring and cost awareness
+
+**Not implemented (future work):**
+- sales forecasting — no ML model or forecasting algorithm
+- inventory recommendations — no replenishment logic
 
 ### Exit criteria
 
 - AI is advisory and read-only where appropriate
 - AI cannot bypass tenant or entitlement restrictions
 - outputs are validated and explainable
+- AI is explicitly described as rule-based, not ML-driven
 
 ## Cross-phase governance
 

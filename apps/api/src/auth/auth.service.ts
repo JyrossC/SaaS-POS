@@ -1,13 +1,21 @@
-import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as argon2 from 'argon2';
 import * as jwt from 'jsonwebtoken';
+import { createHash } from 'node:crypto';
 import { PrismaService } from '../database/prisma.service';
 import {
   AcceptInvitationRequest,
   AuthenticatedUser,
   AuthenticationToken,
+  ForgotPasswordRequest,
   LoginRequest,
   RegisterTenantRequest,
+  ResetPasswordRequest,
 } from './auth.types';
 
 const MODULE_VIEW_PERMISSIONS: Record<string, string> = {
@@ -66,6 +74,54 @@ export class AuthService {
       if (error instanceof UnauthorizedException) throw error;
       throw new UnauthorizedException('Invalid or expired authentication token.');
     }
+  }
+
+  /**
+   * Synchronous token verification that returns the payload or null.
+   * Used by AuthGuard before performing the async revocation check.
+   */
+  verifyTokenSilent(token: string): { sub: string; membershipId: string } | null {
+    try {
+      const payload = jwt.verify(token, this.getSecret()) as {
+        sub: string;
+        membershipId: string;
+      };
+      if (!payload.sub || typeof payload.membershipId !== 'string') {
+        return null;
+      }
+      return payload;
+    } catch {
+      return null;
+    }
+  }
+
+  async isTokenRevoked(token: string): Promise<boolean> {
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const revoked = await this.prisma.revokedToken.findFirst({
+      where: {
+        tokenHash,
+        expiresAt: { gt: new Date() },
+      },
+    });
+    return !!revoked;
+  }
+
+  async revokeToken(token: string): Promise<void> {
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const payload = jwt.verify(token, this.getSecret()) as {
+      sub: string;
+      membershipId: string;
+      exp?: number;
+    };
+    const expiresAt = payload.exp ? new Date(payload.exp * 1000) : new Date();
+
+    await this.prisma.revokedToken.create({
+      data: {
+        tokenHash,
+        userId: payload.sub,
+        expiresAt,
+      },
+    });
   }
 
   async login(credentials: LoginRequest): Promise<{ accessToken: string; user: AuthenticatedUser }> {
@@ -339,6 +395,79 @@ export class AuthService {
 
     const principal = await this.resolvePrincipal(result.user.id, result.membership.id);
     return { accessToken: this.signToken(result.user.id, result.membership.id), user: principal };
+  }
+
+  // --- Password recovery ---
+
+  async forgotPassword(request: ForgotPasswordRequest): Promise<{ token: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: request.email.trim().toLowerCase() },
+    });
+    if (!user || user.status !== 'ACTIVE') {
+      // Do not reveal whether the email exists
+      return { token: '' };
+    }
+
+    // Generate a short-lived reset token (15 minutes)
+    const resetToken = jwt.sign(
+      { sub: user.id, type: 'password_reset' },
+      this.getSecret(),
+      { expiresIn: '15m' },
+    );
+
+    // Store the reset token so it can be invalidated after use
+    await this.prisma.revokedToken.create({
+      data: {
+        tokenHash: createHash('sha256').update(resetToken).digest('hex'),
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+      },
+    });
+
+    return { token: resetToken };
+  }
+
+  async resetPassword(request: ResetPasswordRequest): Promise<void> {
+    let payload: { sub: string; type: string };
+    try {
+      payload = jwt.verify(request.token, this.getSecret()) as {
+        sub: string;
+        type: string;
+      };
+    } catch {
+      throw new UnauthorizedException('Invalid or expired reset token.');
+    }
+
+    if (payload.type !== 'password_reset') {
+      throw new UnauthorizedException('Invalid reset token.');
+    }
+
+    // Check token has not been consumed/revoked
+    const tokenHash = createHash('sha256').update(request.token).digest('hex');
+    const revoked = await this.prisma.revokedToken.findFirst({
+      where: {
+        tokenHash,
+        expiresAt: { gt: new Date() },
+      },
+    });
+    if (!revoked) {
+      throw new UnauthorizedException('Reset token has already been used or is invalid.');
+    }
+
+    const passwordHash = await this.hashPassword(request.password);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: payload.sub },
+        data: { passwordHash },
+      });
+
+      // Mark the reset token as consumed
+      await tx.revokedToken.update({
+        where: { id: revoked.id },
+        data: { expiresAt: new Date() },
+      });
+    });
   }
 
   async resolvePrincipal(userId: string, membershipId: string): Promise<AuthenticatedUser> {

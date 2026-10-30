@@ -48,6 +48,7 @@ model Tenant {
   subscription   TenantSubscription?
   moduleSettings TenantModuleSetting[]
   invitations    MembershipInvitation[]
+  backgroundJobs BackgroundJob[]
 
   @@unique([id, slug])
 }
@@ -63,6 +64,7 @@ model User {
 
   memberships  Membership[]
   auditLogs    AuditLog[]
+  revokedTokens RevokedToken[]
 }
 
 model PlatformAdmin {
@@ -858,6 +860,27 @@ model TenantEntitlementOverride {
   @@index([tenantId])
 }
 
+model BackgroundJob {
+  id            String    @id @default(cuid())
+  type          String
+  status        String    @default("PENDING")
+  payload       Json
+  tenantId      String?
+  attempts      Int       @default(0)
+  maxAttempts   Int       @default(3)
+  lastError     String?
+  nextRunAt     DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  completedAt   DateTime?
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([status, nextRunAt])
+  @@index([tenantId, status])
+  @@index([type])
+}
+
 model AuditLog {
   id               String   @id @default(cuid())
   tenantId         String?
@@ -875,6 +898,19 @@ model AuditLog {
 
   @@index([tenantId, createdAt])
   @@index([tenantId, resource, resourceId])
+}
+
+model RevokedToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 enum BusinessType {

@@ -109,20 +109,25 @@ This file describes the functional feature catalogue for the SaaS Multi-Tenant P
 ## 5. Business intelligence
 
 - total sales and revenue summaries (implemented — ReportingModule sales-summary)
-- gross profit and margin reports (implemented — ReportingModule with subtotal/tax/discount)
 - store performance comparison (implemented — ReportingModule store-comparison)
 - inventory valuation and risk metrics (implemented — ReportingModule inventory report)
 - low-stock and expiry exposure views (implemented — ReportingModule inventory report)
 - product sales trends and demand analysis (implemented — ReportingModule topProducts)
-- report export capability (implemented — ReportingModule structure supports export)
+
+**Not implemented (future work):**
+- gross profit and margin reports — cost-of-goods data not yet tracked at sufficient granularity
+- report export capability (CSV/PDF) — no export endpoint implemented
 
 ## 6. AI-assisted analytics
 
-- sales forecasting (implemented — AIService intent classification)
-- inventory replenishment recommendation (implemented — AIService inventory_status)
+- rule-based query classification for read-only analytical reporting (implemented — AIService keyword-based intent classification)
 - decision-support commentary with business reasoning (implemented — AIService summary)
-- explanation and confidence indicators (implemented — AIService data+summary structure)
 - limits on access to sensitive or non-authorized data (implemented — tenant-scoped queries)
+
+**Not implemented (future work):**
+- sales forecasting — no ML model or forecasting algorithm implemented
+- inventory replenishment recommendation — no replenishment logic implemented
+- explanation and confidence indicators — no confidence scoring implemented
 
 AI actions must not bypass validation, entitlement, or tenant scoping rules.
 
@@ -145,8 +150,8 @@ AI actions must not bypass validation, entitlement, or tenant scoping rules.
 | POS and sales | Complete | Transaction integrity and stock invariants | Yes |
 | Purchasing | Complete | Supplier and stock rules | Yes |
 | Pharmacy | Complete | FEFO, expiry, dispensing, audit | Yes |
-| BI | Complete | Data model and metric definitions | Yes |
-| AI analytics | Complete | Only approved analytical workflows | Yes |
+| BI | Complete | Data model and metric definitions (gross profit and export not yet implemented) | Partial |
+| AI analytics | Complete | Rule-based classification only; no forecasting or ML (see section 6) | Partial |
 | Cash sessions | Complete | Cash drawer management | Yes |
 | Returns & refunds | Complete | Inventory restoration | Yes |
 

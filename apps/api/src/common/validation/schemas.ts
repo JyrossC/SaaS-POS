@@ -210,3 +210,28 @@ export const createPrescriptionSchema = Joi.object({
     .required(),
 }).required();
 
+export const paymentWebhookSignatureSchema = Joi.string().trim().required();
+
+export const paymentWebhookBodySchema = Joi.object({
+  provider: Joi.string().valid('AZAMPAY', 'STRIPE', 'BANK_TRANSFER').required(),
+  eventType: Joi.string().trim().required(),
+  providerRef: Joi.string().trim().required(),
+  invoiceId: Joi.string().trim().optional(),
+  amount: Joi.string()
+    .pattern(/^(?:0|[1-9]\d{0,14})(?:\.\d{1,4})?$/)
+    .required(),
+  currency: Joi.string().trim().max(3).required(),
+  status: Joi.string().valid('PAID', 'FAILED', 'CANCELED', 'PENDING').required(),
+  metadata: Joi.object().optional(),
+  signature: Joi.string().trim().required(),
+}).required();
+
+export const forgotPasswordSchema = Joi.object({
+  email: Joi.string().trim().email().required(),
+}).required();
+
+export const resetPasswordSchema = Joi.object({
+  token: Joi.string().trim().required(),
+  password: Joi.string().min(12).max(128).required(),
+}).required();
+

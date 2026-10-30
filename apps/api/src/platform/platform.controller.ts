@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -9,6 +10,7 @@ import {
   Put,
   Req,
   Res,
+  UnauthorizedException,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -23,6 +25,7 @@ import {
   kybDocumentUploadSchema,
   paymentProviderConfigSchema,
   paymentProviderNameSchema,
+  paymentWebhookBodySchema,
   platformLoginSchema,
   productIdSchema,
 } from '../common/validation/schemas';
@@ -175,7 +178,46 @@ export class PlatformController {
   upsertPaymentProvider(
     @Param('provider', new JoiValidationPipe(paymentProviderNameSchema)) provider: PaymentProviderName,
     @Body(new JoiValidationPipe(paymentProviderConfigSchema)) body: PlatformPaymentProviderConfig,
+    @Req() request: RequestWithPlatformAdmin,
   ) {
-    return this.paymentProviderService.upsert(provider, body);
+    return this.paymentProviderService.upsert(provider, body, request.platformAdmin!.id);
+  }
+
+  @Post('platform/payment-providers/:provider/webhook')
+  @UsePipes(new JoiValidationPipe(paymentWebhookBodySchema))
+  async handlePaymentWebhook(
+    @Param('provider', new JoiValidationPipe(paymentProviderNameSchema)) provider: PaymentProviderName,
+    @Headers('x-signature') signature: string | undefined,
+    @Req() request: Request,
+  ) {
+    const rawBody = (request as any).rawBody;
+    if (!rawBody) {
+      throw new BadRequestException('Missing raw request body for signature verification.');
+    }
+
+    if (!signature) {
+      throw new UnauthorizedException('Missing webhook signature header.');
+    }
+
+    const isValid = await this.paymentProviderService.verifyWebhookSignature(
+      provider,
+      rawBody,
+      signature,
+    );
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid webhook signature.');
+    }
+
+    const body = JSON.parse(rawBody.toString()) as {
+      eventType: string;
+      providerRef: string;
+      invoiceId?: string | null;
+      amount: string;
+      currency: string;
+      status: 'PAID' | 'FAILED' | 'CANCELED' | 'PENDING';
+      metadata?: Record<string, unknown> | null;
+    };
+
+    return this.paymentProviderService.handleWebhook(provider, body);
   }
 }

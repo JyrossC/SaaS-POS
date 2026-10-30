@@ -4,6 +4,25 @@ import {
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 
+/**
+ * Report formulas:
+ * - totalRevenue: SUM(sale.totalAmount) for COMPLETED sales in the date range.
+ * - totalTax: SUM(sale.taxAmount).
+ * - totalDiscount: SUM(sale.discountAmount).
+ * - averageOrderValue: totalRevenue / totalSales (0 when no sales).
+ * - byStore: revenue and count grouped by sale.storeId.
+ * - byPaymentMethod: SUM(payment.amount) grouped by payment.paymentMethod.
+ * - topProducts: SUM(item.quantity) and SUM(item.totalPrice) grouped by product, sorted by revenue desc, top 10.
+ *
+ * Date boundaries:
+ * - startDate and endDate are inclusive. endDate is extended to 23:59:59.999 of the local day.
+ * - Default startDate = first day of current month; default endDate = today.
+ *
+ * Empty-data behavior:
+ * - Returns zero totals, empty arrays/maps, and averageOrderValue of '0' when no sales exist.
+ * - Low-stock and out-of-stock counts are 0 when no inventory items exist.
+ */
+
 export interface SalesSummaryQuery {
   storeId?: string;
   storeIds?: string[];
@@ -134,6 +153,16 @@ export class ReportingService {
       })),
     };
   }
+
+  /**
+   * Inventory report formulas:
+   * - totalItems: count of inventory balance records for the tenant/store scope.
+   * - lowStockCount: items where quantityOnHand <= lowStockThreshold (default 10).
+   * - outOfStockCount: items where quantityOnHand <= 0.
+   *
+   * Empty-data behavior:
+   * - Returns zero counts and empty arrays when no inventory balances exist.
+   */
 
   async getInventoryReport(tenantId: string, query: InventoryReportQuery) {
     const where: Prisma.InventoryBalanceWhereInput = {

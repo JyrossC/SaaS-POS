@@ -48,7 +48,13 @@ export class AIController {
         'store comparison',
         'low stock alerts',
       ],
-      description: 'AI analytics supports natural language queries about sales, inventory, and store performance.',
+      description: 'Rule-based query classification for read-only analytical reporting. '
+        + 'Supports keyword-based intent routing to sales, inventory, and store reports. '
+        + 'No forecasting, confidence scoring, or replenishment recommendations are provided.',
+      classificationMethod: 'rule-based keyword matching',
+      providesForecasting: false,
+      providesConfidenceScoring: false,
+      providesReplenishmentRecommendations: false,
     };
   }
 }
