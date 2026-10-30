@@ -1,0 +1,2 @@
+-- AddEnumValue
+ALTER TYPE "TenantStatus" ADD VALUE 'PENDING_REVIEW' BEFORE 'ACTIVE';

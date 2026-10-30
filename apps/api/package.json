@@ -1,0 +1,46 @@
+{
+  "name": "@saas-pos/api",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "nest start --watch",
+    "build": "nest build",
+    "start": "node dist/main",
+    "lint": "eslint \"src/**/*.ts\" --max-warnings 0 --no-error-on-unmatched-pattern --ignore-pattern \"**/*.spec.ts\"",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --runInBand --passWithNoTests",
+    "test:isolation": "jest --runInBand --passWithNoTests --testPathPattern=isolation",
+    "test:concurrency": "jest --runInBand --passWithNoTests --testPathPattern=concurrency",
+    "test:pharmacy": "jest --runInBand --passWithNoTests --testPathPattern=pharmacy",
+    "docs:api": "echo 'OpenAPI docs pending implementation'",
+    "docs:api:serve": "echo 'OpenAPI docs serve pending implementation'"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "@prisma/client": "6.19.0",
+    "argon2": "^0.45.1",
+    "dotenv": "^17.2.3",
+    "joi": "^18.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.0.0",
+    "@nestjs/testing": "^11.0.0",
+    "@types/express": "^5.0.0",
+    "@types/jest": "^29.5.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.39.1",
+    "@typescript-eslint/parser": "^8.39.1",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.9.3"
+  }
+}

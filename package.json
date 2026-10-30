@@ -1,0 +1,41 @@
+{
+  "name": "saas-pos",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm --workspace apps/web run dev",
+    "dev:api": "npm --workspace apps/api run dev",
+    "build:web": "npm --workspace apps/web run build",
+    "build:api": "npm --workspace apps/api run build",
+    "build": "npm run build:web && npm run build:api",
+    "lint": "npm --workspace apps/web run lint && npm --workspace apps/api run lint",
+    "typecheck": "npm --workspace apps/web run typecheck && npm --workspace apps/api run typecheck",
+    "test": "npm --workspace apps/web run test && npm --workspace apps/api run test",
+    "test:isolation": "npm --workspace apps/api run test:isolation",
+    "test:concurrency": "npm --workspace apps/api run test:concurrency",
+    "test:pharmacy": "npm --workspace apps/api run test:pharmacy",
+    "migrate:deploy": "npx prisma migrate deploy",
+    "migrate:create": "npx prisma migrate dev --create-only",
+    "migrate:reset": "npx prisma migrate reset --force",
+    "prisma:generate": "npx prisma generate",
+    "db:seed": "npx prisma db seed",
+    "docs:api": "npm --workspace apps/api run docs:api",
+    "docs:api:serve": "npm --workspace apps/api run docs:api:serve"
+  },
+  "allowScripts": {
+    "@prisma/client@6.19.0": true,
+    "argon2@0.45.1": true,
+    "prisma@6.19.0": true,
+    "@prisma/engines@6.19.0": true
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "devDependencies": {
+    "prisma": "6.19.0"
+  }
+}
