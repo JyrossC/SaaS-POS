@@ -48,7 +48,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     const isProduction = this.isProduction;
 
-    let errorBody: { statusCode: number; message: string; error?: string };
+    let errorBody: { statusCode: number; message: string; error?: string; details?: unknown[] };
     if (isHttpException) {
       const responseObj = exception.getResponse();
       const message =
@@ -59,6 +59,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         statusCode: status,
         message: isProduction ? this.sanitizeMessage(message) : message,
       };
+      const details = (responseObj as { details?: unknown[] }).details;
+      if (details) {
+        errorBody.details = details;
+      }
       if (!isProduction && (responseObj as { error?: string }).error) {
         errorBody.error = (responseObj as { error?: string }).error;
       }

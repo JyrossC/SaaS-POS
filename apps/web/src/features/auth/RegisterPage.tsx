@@ -21,18 +21,24 @@ export function RegisterPage({ onRegister }: RegisterProps) {
     planCode: 'STARTER',
   });
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
 
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+    // Clear field error when user starts typing
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => { const next = { ...prev }; delete next[field]; return next; });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setFieldErrors({});
 
     try {
       const response = await apiClient.post<{ accessToken: string; user: any }>(
@@ -47,9 +53,19 @@ export function RegisterPage({ onRegister }: RegisterProps) {
         onRegister?.(accessToken, user);
         navigate('/app/dashboard', { replace: true });
       } else {
-        setError(response.error?.message || 'Registration failed');
+        const details = response.error?.details;
+        if (Array.isArray(details) && details.length > 0) {
+          const next: Record<string, string> = {};
+          details.forEach((d: any) => {
+            if (d.field) next[d.field] = d.message;
+          });
+          setFieldErrors(next);
+          setError((details[0] as any)?.message || 'Registration failed');
+        } else {
+          setError(response.error?.message || 'Registration failed');
+        }
       }
-    } catch (requestError) {
+    } catch (requestError: any) {
       setError(requestError instanceof Error ? requestError.message : 'Registration request failed');
     } finally {
       setLoading(false);
@@ -76,6 +92,7 @@ export function RegisterPage({ onRegister }: RegisterProps) {
           value={form.tenantName}
           onChange={(e) => handleChange('tenantName', e.target.value)}
           required
+          error={fieldErrors.tenantName}
         />
         <Input
           label="Tenant Slug"
@@ -83,7 +100,11 @@ export function RegisterPage({ onRegister }: RegisterProps) {
           value={form.tenantSlug}
           onChange={(e) => handleChange('tenantSlug', e.target.value)}
           required
+          error={fieldErrors.tenantSlug}
         />
+        <p className="text-caption text-muted">
+          Lowercase letters, numbers, and hyphens only (e.g. acme-retail)
+        </p>
         <div className="form-field">
           <label className="block text-label-md text-secondary mb-1">Business Type</label>
           <select
@@ -102,6 +123,7 @@ export function RegisterPage({ onRegister }: RegisterProps) {
           value={form.ownerName}
           onChange={(e) => handleChange('ownerName', e.target.value)}
           required
+          error={fieldErrors.ownerName}
         />
         <Input
           label="Owner Email"
@@ -110,6 +132,7 @@ export function RegisterPage({ onRegister }: RegisterProps) {
           value={form.ownerEmail}
           onChange={(e) => handleChange('ownerEmail', e.target.value)}
           required
+          error={fieldErrors.ownerEmail}
         />
         <Input
           label="Password"
@@ -118,7 +141,11 @@ export function RegisterPage({ onRegister }: RegisterProps) {
           value={form.password}
           onChange={(e) => handleChange('password', e.target.value)}
           required
+          error={fieldErrors.password}
         />
+        <p className="text-caption text-muted">
+          Must be at least 12 characters
+        </p>
         <div className="form-field">
           <label className="block text-label-md text-secondary mb-1">Subscription Plan</label>
           <select
