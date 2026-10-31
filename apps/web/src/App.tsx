@@ -20,6 +20,7 @@ import { CashSessionsPage } from './features/cash-sessions/CashSessionsPage';
 import { ReturnsPage } from './features/returns/ReturnsPage';
 import { PharmacyPage } from './features/pharmacy/PharmacyPage';
 import { ReportsPage } from './features/reports/ReportsPage';
+import { CampaignsPage } from './features/campaigns/CampaignsPage';
 import { Card } from './components/ui/Card';
 import { LoadingState } from './components/ui/LoadingState';
 import { RequirePermissions, useAuth } from './components/auth/AuthProvider';
@@ -84,6 +85,11 @@ function AppShell({
             <Route path="/app/reports" element={
               <RequirePermissions permissions="reports.view">
                 <ReportsPage />
+              </RequirePermissions>
+            } />
+            <Route path="/app/campaigns" element={
+              <RequirePermissions permissions="campaigns.view">
+                <CampaignsPage />
               </RequirePermissions>
             } />
             <Route path="*" element={<Navigate to="/app/dashboard" replace />} />

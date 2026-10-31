@@ -49,6 +49,9 @@ model Tenant {
   moduleSettings TenantModuleSetting[]
   invitations    MembershipInvitation[]
   backgroundJobs BackgroundJob[]
+  campaigns      Campaign[]
+  customerSegments CustomerSegment[]
+  campaignUsages CampaignUsage[]
 
   @@unique([id, slug])
 }
@@ -414,6 +417,7 @@ model Product {
   prescriptionItems PrescriptionItem[]
   dispensingItems DispensingItem[]
   refundItems  RefundItem[]
+  campaignProducts CampaignProduct[]
 
   @@unique([tenantId, id])
   @@unique([tenantId, sku])
@@ -460,6 +464,7 @@ model Sale {
   items    SaleItem[]
   payments SalePayment[]
   refunds  Refund[]
+  campaignUsages CampaignUsage[]
 
   @@unique([tenantId, id])
   @@unique([tenantId, saleNumber])
@@ -911,6 +916,173 @@ model RevokedToken {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+model Campaign {
+  id              String          @id @default(cuid())
+  tenantId        String
+  name            String
+  description     String?
+  type            CampaignType
+  mechanism       CampaignMechanism
+  promoCode       String?
+  value           Decimal         @db.Decimal(19, 4) // percentage or fixed amount
+  buyQuantity     Int?            // for BOGO: buy this many
+  getQuantity     Int?            // for BOGO: get this many free/discounted
+  scope           CampaignScope   @default(TENANT_WIDE)
+  customerTargeting CustomerTargeting @default(ALL_CUSTOMERS)
+  startDate       DateTime
+  endDate         DateTime?
+  recurrenceType  CampaignRecurrence? // NONE, DAILY, WEEKLY, MONTHLY, YEARLY
+  recurrenceInterval Int?         // every N days/weeks/months/years
+  maxUses         Int?            // total campaign uses
+  maxUsesPerCustomer Int?        // per customer limit
+  maxUsesPerCustomerPerDay Int?   // per customer per day
+  maxUsesPerStore  Int?            // per store limit
+  minOrderAmount  Decimal?        @db.Decimal(19, 4)
+  minQuantity     Int?            // minimum items in cart
+  allowedPaymentMethods String[]  // JSON array of payment method codes
+  stackingRule    CampaignStackingRule @default(STACKABLE)
+  status          CampaignStatus  @default(DRAFT)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products        CampaignProduct[]
+  usages          CampaignUsage[]
+  segments        CampaignCustomerSegment[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, startDate, endDate])
+  @@unique([tenantId, promoCode])
+}
+
+model CampaignProduct {
+  id        String   @id @default(cuid())
+  campaignId String
+  productId  String
+  tenantId   String
+
+  campaign  Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  product   Product    @relation(fields: [tenantId, productId], references: [tenantId, id], onDelete: Cascade)
+
+  @@unique([campaignId, productId])
+  @@index([tenantId])
+}
+
+model CustomerSegment {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  type        SegmentType
+  rules       Json     // segment definition rules (e.g., min purchase, visit frequency)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberships CustomerSegmentMembership[]
+  campaigns   CampaignCustomerSegment[]
+
+  @@index([tenantId, type])
+}
+
+model CustomerSegmentMembership {
+  id            String   @id @default(cuid())
+  segmentId     String
+  customerId    String   // membershipId of the customer
+  tenantId      String
+  joinedAt      DateTime @default(now())
+
+  segment       CustomerSegment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+  @@unique([segmentId, customerId])
+  @@index([tenantId, customerId])
+}
+
+model CampaignCustomerSegment {
+  id            String   @id @default(cuid())
+  campaignId    String
+  segmentId     String
+  tenantId      String
+
+  campaign      Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  segment       CustomerSegment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, segmentId])
+  @@index([tenantId])
+}
+
+model CampaignUsage {
+  id              String   @id @default(cuid())
+  campaignId      String
+  tenantId        String
+  customerId      String?  // membershipId who used it
+  storeId         String?
+  saleId          String?
+  discountAmount  Decimal  @db.Decimal(19, 4)
+  usedAt          DateTime @default(now())
+
+  campaign        Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  tenant          Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sale            Sale?      @relation(fields: [saleId], references: [id], onDelete: SetNull)
+
+  @@index([campaignId, usedAt])
+  @@index([tenantId, customerId])
+  @@index([tenantId, storeId])
+}
+
+enum CampaignType {
+  PERCENTAGE_DISCOUNT
+  FIXED_AMOUNT_DISCOUNT
+  BUY_X_GET_Y
+  BUNDLE_PRICING
+  TIERED_SPEND
+}
+
+enum CampaignMechanism {
+  PROMO_CODE
+  AUTOMATIC
+  BOTH
+}
+
+enum CampaignScope {
+  TENANT_WIDE
+}
+
+enum CustomerTargeting {
+  ALL_CUSTOMERS
+  LOYALTY_MEMBERS
+  FIRST_TIME_BUYERS
+  SEGMENT_BASED
+}
+
+enum CampaignRecurrence {
+  NONE
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+enum CampaignStackingRule {
+  STACKABLE
+  BEST_ONLY
+  EXCLUSIVE
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  EXPIRED
+}
+
+enum SegmentType {
+  LOYALTY
+  FIRST_TIME
+  VIP
+  INACTIVE
+  CUSTOM
 }
 
 enum BusinessType {

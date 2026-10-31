@@ -17,6 +17,7 @@ import { PharmacyModule } from './pharmacy/pharmacy.module';
 import { ReportingModule } from './reporting/reporting.module';
 import { AIModule } from './ai/ai.module';
 import { JobsModule } from './jobs/jobs.module';
+import { CampaignModule } from './campaigns/campaign.module';
 import { LoggingModule } from './logging/logging.module';
 import { HealthController } from './health/health.controller';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
@@ -36,6 +37,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
     ReportingModule,
     AIModule,
     JobsModule,
+    CampaignModule,
     PlatformModule,
     LoggingModule,
   ],

@@ -37,6 +37,7 @@ export function Sidebar({ isCollapsed, toggleCollapse }: SidebarProps) {
     { to: '/app/returns', label: 'Returns', icon: <span className="text-muted">↩️</span> },
     { to: '/app/cash-sessions', label: 'Cash Sessions', icon: <span className="text-muted">💵</span> },
     { to: '/app/reports', label: 'Reports', icon: <span className="text-muted">📈</span> },
+    { to: '/app/campaigns', label: 'Campaigns', icon: <span className="text-muted">🏷️</span> },
     { to: '/app/pharmacy', label: 'Pharmacy', icon: <span className="text-muted">💊</span> },
     { to: '/app/settings', label: 'Settings', icon: <span className="text-muted">⚙️</span> },
   ];

@@ -5,7 +5,6 @@ import {
   Req,
   UnauthorizedException,
   UseGuards,
-  UsePipes,
 } from '@nestjs/common';
 import { RequestWithUser } from '../auth/auth.guard';
 import { AuthGuard } from '../auth/auth.guard';
@@ -13,7 +12,6 @@ import { RequirePermissions } from '../authorization/permission.decorator';
 import { PermissionGuard } from '../authorization/permission.guard';
 import { TenantContextService } from '../tenant/tenant-context.service';
 import { EntitlementService } from '../subscription/entitlement.service';
-import { JoiValidationPipe } from '../common/validation/joi-validation.pipe';
 import { ReportingService } from './reporting.service';
 
 @Controller('reports')

@@ -38,11 +38,15 @@ const permissions = [
   ['pharmacy.prescriptions.view', 'View prescriptions'],
   ['subscriptions.view', 'View subscription and plan details'],
   ['subscriptions.manage', 'Manage tenant subscription'],
+  ['campaigns.view', 'View sales campaigns'],
+  ['campaigns.create', 'Create sales campaigns'],
+  ['campaigns.update', 'Update sales campaigns'],
+  ['campaigns.delete', 'Delete sales campaigns'],
 ];
 
 const platformModules = [
   'pos', 'products', 'inventory', 'purchasing',
-  'pharmacy', 'analytics', 'ai', 'stores', 'staff',
+  'pharmacy', 'analytics', 'ai', 'stores', 'staff', 'campaigns',
 ];
 
 const defaultPlans = [
@@ -62,6 +66,7 @@ const defaultPlans = [
       { key: 'ai', value: false },
       { key: 'stores', value: true },
       { key: 'staff', value: true },
+      { key: 'campaigns', value: true },
       { key: 'limit.stores', value: 1 },
       { key: 'limit.staff', value: 3 },
     ],
@@ -82,6 +87,7 @@ const defaultPlans = [
       { key: 'ai', value: false },
       { key: 'stores', value: true },
       { key: 'staff', value: true },
+      { key: 'campaigns', value: true },
       { key: 'limit.stores', value: 3 },
       { key: 'limit.staff', value: 10 },
     ],
@@ -102,6 +108,7 @@ const defaultPlans = [
       { key: 'ai', value: true },
       { key: 'stores', value: true },
       { key: 'staff', value: true },
+      { key: 'campaigns', value: true },
       { key: 'limit.stores', value: 10 },
       { key: 'limit.staff', value: 30 },
     ],

@@ -11,9 +11,10 @@ import { ReturnsController } from './returns.controller';
 import { ReturnsService } from './returns.service';
 
 import { PharmacyModule } from '../pharmacy/pharmacy.module';
+import { CampaignModule } from '../campaigns/campaign.module';
 
 @Module({
-  imports: [AuthModule, SubscriptionModule, TenantModule, PharmacyModule],
+  imports: [AuthModule, SubscriptionModule, TenantModule, PharmacyModule, CampaignModule],
   controllers: [SalesController, CashSessionController, ReturnsController],
   providers: [SalesService, CashSessionService, ReturnsService, PermissionGuard],
   exports: [SalesService, CashSessionService, ReturnsService],

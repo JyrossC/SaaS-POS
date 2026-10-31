@@ -11,6 +11,7 @@ import { AuthenticatedUser } from '../auth/auth.types';
 import { PrismaService } from '../database/prisma.service';
 
 import { PharmacyService } from '../pharmacy/pharmacy.service';
+import { CampaignService, CampaignEligibilityCheck } from '../campaigns/campaign.service';
 
 export interface SaleItemInput {
   productId: string;
@@ -29,6 +30,8 @@ export interface CreateSaleInput {
   payments: PaymentInput[];
   notes?: string | null;
   idempotencyKey: string;
+  campaignId?: string | null;
+  promoCode?: string | null;
 }
 
 @Injectable()
@@ -36,6 +39,7 @@ export class SalesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pharmacyService: PharmacyService,
+    private readonly campaignService: CampaignService,
   ) {}
 
   async createSale(
@@ -157,14 +161,52 @@ export class SalesService {
     }
 
     const totalAmount = subtotal;
-    // Validate total payment matches
-    if (!totalPayment.equals(totalAmount)) {
+    let campaignDiscount = new Prisma.Decimal(0);
+    let appliedCampaignId: string | null = null;
+
+    // Campaign eligibility and discount application
+    if (input.campaignId || input.promoCode) {
+      const productIds = input.items.map((i) => i.productId);
+      const cartTotal = subtotal;
+      const cartQuantity = input.items.reduce((sum, item) => sum + Number(item.quantity), 0);
+      const paymentMethod = input.payments[0]?.paymentMethod || null;
+
+      const eligibility = await this.campaignService.checkEligibility(
+        tenantId,
+        actor.membershipId,
+        input.storeId,
+        cartTotal,
+        cartQuantity,
+        paymentMethod,
+        input.promoCode || null,
+        productIds,
+      );
+
+      // Find an eligible campaign
+      let eligibleCampaign: CampaignEligibilityCheck | undefined;
+      for (const e of eligibility) {
+        if (e.eligible) {
+          eligibleCampaign = e;
+          break;
+        }
+      }
+      if (!eligibleCampaign) {
+        throw new BadRequestException('No eligible campaign found for this cart.');
+      }
+
+      campaignDiscount = eligibleCampaign.discountAmount;
+      appliedCampaignId = eligibleCampaign.campaign.id;
+    }
+
+    // Validate total payment matches (subtotal - discount)
+    const finalTotal = subtotal.sub(campaignDiscount);
+    if (!totalPayment.equals(finalTotal)) {
       throw new BadRequestException(
-        `Payment total (${totalPayment}) does not match sale total (${totalAmount}).`,
+        `Payment total (${totalPayment}) does not match sale total (${finalTotal}).`,
       );
     }
 
-    // Create sale with idempotencyKey
+    // Create sale with idempotencyKey and campaign discount
     const sale = await tx.sale.create({
       data: {
         tenantId,
@@ -175,11 +217,25 @@ export class SalesService {
         status: 'COMPLETED',
         subtotal,
         taxAmount: new Prisma.Decimal(0),
-        discountAmount: new Prisma.Decimal(0),
-        totalAmount,
+        discountAmount: campaignDiscount,
+        totalAmount: finalTotal,
         notes: input.notes?.trim() || null,
       },
     });
+
+    // Record campaign usage
+    if (appliedCampaignId) {
+      await tx.campaignUsage.create({
+        data: {
+          campaignId: appliedCampaignId,
+          tenantId,
+          customerId: actor.membershipId,
+          storeId: input.storeId,
+          saleId: sale.id,
+          discountAmount: campaignDiscount,
+        },
+      });
+    }
 
     // Create sale items and update inventory with conditional updates
     for (const itemData of saleItemsData) {

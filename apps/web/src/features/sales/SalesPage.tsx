@@ -42,6 +42,7 @@ export function SalesPage() {
   const [idempotencyKey, setIdempotencyKey] = useState(`sale-${Date.now()}`);
   const [storeId, setStoreId] = useState('');
   const [notes, setNotes] = useState('');
+  const [promoCode, setPromoCode] = useState('');
 
   const loading = isLoading || storesLoading || productsLoading;
   if (loading) return <LoadingState message="Loading sales..." />;
@@ -102,7 +103,7 @@ export function SalesPage() {
       return;
     }
 
-    try {
+      try {
       await createSale.mutateAsync({
         storeId,
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
@@ -112,11 +113,13 @@ export function SalesPage() {
           reference: p.reference || null,
         })),
         notes: notes || null,
+        promoCode: promoCode || null,
         idempotencyKey,
       });
       toast.success('Sale created successfully');
       setStoreId('');
       setNotes('');
+      setPromoCode('');
       setItems([{ productId: '', productName: '', sku: '', quantity: '1', unitPrice: '0' }]);
       setPayments([{ paymentMethod: 'CASH', amount: '0', reference: '' }]);
       setIdempotencyKey(`sale-${Date.now()}`);
@@ -159,6 +162,14 @@ export function SalesPage() {
                   label="Notes"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
+                />
+              </div>
+              <div className="col-span-2">
+                <Input
+                  label="Promo Code (optional)"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value)}
+                  placeholder="e.g. BLACKFRIDAY20"
                 />
               </div>
             </div>

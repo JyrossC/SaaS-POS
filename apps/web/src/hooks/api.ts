@@ -390,3 +390,110 @@ export function useStoreComparison(params?: { startDate?: string; endDate?: stri
     ),
   });
 }
+
+// --- Campaign hooks ---
+export function useCampaigns(params?: { status?: string; type?: string; search?: string; page?: number; pageSize?: number }) {
+  return useQuery({
+    queryKey: ['campaigns', params],
+    queryFn: queryFn(() =>
+      apiClient.get<{ items: any[]; total: number }>('/campaigns', {
+        params: params as any,
+      })),
+  });
+}
+
+export function useCreateCampaign() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: mutationFn((body: any) =>
+      apiClient.post<any>('/campaigns', body)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+    },
+  });
+}
+
+export function useUpdateCampaign() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: mutationFn(({ id, body }: { id: string; body: any }) =>
+      apiClient.patch<any>(`/campaigns/${id}`, body)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+    },
+  });
+}
+
+export function useDeleteCampaign() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: mutationFn((id: string) =>
+      apiClient.delete<any>(`/campaigns/${id}`)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+    },
+  });
+}
+
+export function useCampaignAnalytics(campaignId: string) {
+  return useQuery({
+    queryKey: ['campaign-analytics', campaignId],
+    queryFn: queryFn(() =>
+      apiClient.get<any>(`/campaigns/${campaignId}/analytics`)),
+    enabled: !!campaignId,
+  });
+}
+
+export function useCustomerSegments(type?: string) {
+  return useQuery({
+    queryKey: ['customer-segments', type],
+    queryFn: queryFn(() =>
+      apiClient.get<any[]>('/campaigns/segments', {
+        params: type ? { type } : undefined,
+      })),
+  });
+}
+
+export function useCreateCustomerSegment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: mutationFn((body: any) =>
+      apiClient.post<any>('/campaigns/segments', body)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer-segments'] });
+    },
+  });
+}
+
+export function useDeleteCustomerSegment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: mutationFn((id: string) =>
+      apiClient.delete<any>(`/campaigns/segments/${id}`)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer-segments'] });
+    },
+  });
+}
+
+export function useAddCustomerToSegment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: mutationFn(({ segmentId, customerId }: { segmentId: string; customerId: string }) =>
+      apiClient.post<any>(`/campaigns/segments/${segmentId}/customers/${customerId}`)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer-segments'] });
+    },
+  });
+}
+
+export function useRemoveCustomerFromSegment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: mutationFn(({ segmentId, customerId }: { segmentId: string; customerId: string }) =>
+      apiClient.delete<any>(`/campaigns/segments/${segmentId}/customers/${customerId}`)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer-segments'] });
+    },
+  });
+}

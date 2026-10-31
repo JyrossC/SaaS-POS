@@ -235,3 +235,90 @@ export const resetPasswordSchema = Joi.object({
   password: Joi.string().min(12).max(128).required(),
 }).required();
 
+export const campaignIdParamSchema = Joi.object({
+  campaignId: Joi.string().trim().required(),
+}).required();
+
+export const customerSegmentIdParamSchema = Joi.object({
+  segmentId: Joi.string().trim().required(),
+  customerId: Joi.string().trim().required(),
+}).required();
+
+export const createCampaignSchema = Joi.object({
+  name: Joi.string().trim().min(1).max(200).required(),
+  description: Joi.string().trim().max(1000).allow(null, '').optional(),
+  type: Joi.string().valid('PERCENTAGE_DISCOUNT', 'FIXED_AMOUNT_DISCOUNT', 'BUY_X_GET_Y', 'BUNDLE_PRICING', 'TIERED_SPEND').required(),
+  mechanism: Joi.string().valid('PROMO_CODE', 'AUTOMATIC', 'BOTH').required(),
+  promoCode: Joi.string().trim().max(50).allow(null, '').optional(),
+  value: Joi.string().pattern(/^(?:0|[1-9]\d{0,14})(?:\.\d{1,4})?$/).required(),
+  buyQuantity: Joi.number().integer().min(1).optional(),
+  getQuantity: Joi.number().integer().min(1).optional(),
+  scope: Joi.string().valid('TENANT_WIDE').optional(),
+  customerTargeting: Joi.string().valid('ALL_CUSTOMERS', 'LOYALTY_MEMBERS', 'FIRST_TIME_BUYERS', 'SEGMENT_BASED').optional(),
+  segmentIds: Joi.array().items(Joi.string().trim()).optional(),
+  startDate: Joi.string().isoDate().required(),
+  endDate: Joi.string().isoDate().allow(null).optional(),
+  recurrenceType: Joi.string().valid('NONE', 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY').optional(),
+  recurrenceInterval: Joi.number().integer().min(1).optional(),
+  maxUses: Joi.number().integer().min(1).optional(),
+  maxUsesPerCustomer: Joi.number().integer().min(1).optional(),
+  maxUsesPerCustomerPerDay: Joi.number().integer().min(1).optional(),
+  maxUsesPerStore: Joi.number().integer().min(1).optional(),
+  minOrderAmount: Joi.string().pattern(/^(?:0|[1-9]\d{0,14})(?:\.\d{1,4})?$/).allow(null).optional(),
+  minQuantity: Joi.number().integer().min(1).optional(),
+  allowedPaymentMethods: Joi.array().items(Joi.string().trim()).optional(),
+  stackingRule: Joi.string().valid('STACKABLE', 'BEST_ONLY', 'EXCLUSIVE').optional(),
+  productIds: Joi.array().items(Joi.string().trim()).optional(),
+}).required();
+
+export const updateCampaignSchema = Joi.object({
+  name: Joi.string().trim().min(1).max(200).optional(),
+  description: Joi.string().trim().max(1000).allow(null, '').optional(),
+  type: Joi.string().valid('PERCENTAGE_DISCOUNT', 'FIXED_AMOUNT_DISCOUNT', 'BUY_X_GET_Y', 'BUNDLE_PRICING', 'TIERED_SPEND').optional(),
+  mechanism: Joi.string().valid('PROMO_CODE', 'AUTOMATIC', 'BOTH').optional(),
+  promoCode: Joi.string().trim().max(50).allow(null, '').optional(),
+  value: Joi.string().pattern(/^(?:0|[1-9]\d{0,14})(?:\.\d{1,4})?$/).optional(),
+  buyQuantity: Joi.number().integer().min(1).optional(),
+  getQuantity: Joi.number().integer().min(1).optional(),
+  scope: Joi.string().valid('TENANT_WIDE').optional(),
+  customerTargeting: Joi.string().valid('ALL_CUSTOMERS', 'LOYALTY_MEMBERS', 'FIRST_TIME_BUYERS', 'SEGMENT_BASED').optional(),
+  segmentIds: Joi.array().items(Joi.string().trim()).optional(),
+  startDate: Joi.string().isoDate().optional(),
+  endDate: Joi.string().isoDate().allow(null).optional(),
+  recurrenceType: Joi.string().valid('NONE', 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY').optional(),
+  recurrenceInterval: Joi.number().integer().min(1).optional(),
+  maxUses: Joi.number().integer().min(1).optional(),
+  maxUsesPerCustomer: Joi.number().integer().min(1).optional(),
+  maxUsesPerCustomerPerDay: Joi.number().integer().min(1).optional(),
+  maxUsesPerStore: Joi.number().integer().min(1).optional(),
+  minOrderAmount: Joi.string().pattern(/^(?:0|[1-9]\d{0,14})(?:\.\d{1,4})?$/).allow(null).optional(),
+  minQuantity: Joi.number().integer().min(1).optional(),
+  allowedPaymentMethods: Joi.array().items(Joi.string().trim()).optional(),
+  stackingRule: Joi.string().valid('STACKABLE', 'BEST_ONLY', 'EXCLUSIVE').optional(),
+  status: Joi.string().valid('DRAFT', 'ACTIVE', 'PAUSED', 'EXPIRED').optional(),
+  productIds: Joi.array().items(Joi.string().trim()).optional(),
+}).required();
+
+export const campaignQuerySchema = Joi.object({
+  storeId: Joi.string().trim().optional(),
+  status: Joi.string().valid('DRAFT', 'ACTIVE', 'PAUSED', 'EXPIRED').optional(),
+  type: Joi.string().valid('PERCENTAGE_DISCOUNT', 'FIXED_AMOUNT_DISCOUNT', 'BUY_X_GET_Y', 'BUNDLE_PRICING', 'TIERED_SPEND').optional(),
+  search: Joi.string().trim().optional(),
+  page: Joi.number().integer().min(1).default(1),
+  pageSize: Joi.number().integer().min(1).max(100).default(25),
+}).required();
+
+export const createCustomerSegmentSchema = Joi.object({
+  name: Joi.string().trim().min(1).max(200).required(),
+  type: Joi.string().valid('LOYALTY', 'FIRST_TIME', 'VIP', 'INACTIVE', 'CUSTOM').required(),
+  rules: Joi.object().default({}),
+  description: Joi.string().trim().max(1000).allow(null, '').optional(),
+}).required();
+
+export const updateCustomerSegmentSchema = Joi.object({
+  name: Joi.string().trim().min(1).max(200).optional(),
+  type: Joi.string().valid('LOYALTY', 'FIRST_TIME', 'VIP', 'INACTIVE', 'CUSTOM').optional(),
+  rules: Joi.object().optional(),
+  description: Joi.string().trim().max(1000).allow(null, '').optional(),
+}).required();
+

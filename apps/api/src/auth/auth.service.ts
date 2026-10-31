@@ -29,6 +29,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, string> = {
   stores: 'stores.create',
   staff: 'staff.invite',
   subscription: 'subscription.view',
+  campaigns: 'campaigns.view',
 };
 
 const MODULE_WRITE_PERMISSIONS: Record<string, string> = {
@@ -42,6 +43,7 @@ const MODULE_WRITE_PERMISSIONS: Record<string, string> = {
   stores: 'stores.create',
   staff: 'staff.invite',
   subscription: 'subscription.manage',
+  campaigns: 'campaigns.create',
 };
 
 @Injectable()
@@ -230,7 +232,7 @@ export class AuthService {
 
     const moduleKeys = [
       'pos', 'products', 'inventory', 'purchasing', 'pharmacy',
-      'analytics', 'ai', 'stores', 'staff',
+      'analytics', 'ai', 'stores', 'staff', 'campaigns',
     ];
     const planEntitlements = new Map(
       planVersion.entitlements.map(({ key, value }) => [key, value]),

@@ -22,7 +22,11 @@ export type Permission =
   | 'pharmacy.dispensing.create'
   | 'reports.view'
   | 'subscriptions.view'
-  | 'subscriptions.manage';
+  | 'subscriptions.manage'
+  | 'campaigns.view'
+  | 'campaigns.create'
+  | 'campaigns.update'
+  | 'campaigns.delete';
 
 interface AuthContextType {
   token: string | null;
