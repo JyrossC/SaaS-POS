@@ -17,7 +17,7 @@ export class JoiValidationPipe implements PipeTransform {
 
     const { error, value: normalizedValue } = this.schema.validate(value, {
       abortEarly: false,
-      allowUnknown: false,
+      allowUnknown: true,
       stripUnknown: false,
     });
 

@@ -15,10 +15,6 @@ import { TenantContextService } from '../tenant/tenant-context.service';
 import { EntitlementService } from '../subscription/entitlement.service';
 import { JoiValidationPipe } from '../common/validation/joi-validation.pipe';
 import { ReportingService } from './reporting.service';
-import {
-  storeIdQuerySchema,
-  lowStockThresholdQuerySchema,
-} from '../common/validation/schemas';
 
 @Controller('reports')
 @UseGuards(AuthGuard, PermissionGuard)
@@ -31,7 +27,6 @@ export class ReportingController {
 
   @Get('sales-summary')
   @RequirePermissions('reports.view')
-  @UsePipes(new JoiValidationPipe(storeIdQuerySchema))
   async getSalesSummary(
     @Req() request: RequestWithUser,
     @Query('storeId') storeId?: string,
@@ -67,8 +62,6 @@ export class ReportingController {
 
   @Get('inventory')
   @RequirePermissions('reports.view')
-  @UsePipes(new JoiValidationPipe(storeIdQuerySchema))
-  @UsePipes(new JoiValidationPipe(lowStockThresholdQuerySchema))
   async getInventoryReport(
     @Req() request: RequestWithUser,
     @Query('storeId') storeId?: string,

@@ -18,11 +18,9 @@ import { LoggingService } from '../../logging/logging.service';
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
+  private readonly isProduction = process.env.NODE_ENV === 'production';
 
-  constructor(
-    private readonly loggingService: LoggingService,
-    private readonly nodeEnv: string,
-  ) {}
+  constructor(private readonly loggingService: LoggingService) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
@@ -48,7 +46,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       );
     }
 
-    const isProduction = this.nodeEnv === 'production';
+    const isProduction = this.isProduction;
 
     let errorBody: { statusCode: number; message: string; error?: string };
     if (isHttpException) {

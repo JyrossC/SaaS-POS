@@ -136,7 +136,7 @@ export const paginationSchema = Joi.object({
 }).required();
 
 export const storeIdQuerySchema = Joi.object({
-  storeId: Joi.string().trim().required(),
+  storeId: Joi.string().trim().optional(),
 }).required();
 
 export const statusQuerySchema = Joi.object({

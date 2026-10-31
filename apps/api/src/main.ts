@@ -64,7 +64,7 @@ async function bootstrap() {
   app.useLogger(logger);
 
   // Global exception filter - sanitizes errors in production
-  app.useGlobalFilters(new GlobalExceptionFilter(logger, environment.NODE_ENV));
+  app.useGlobalFilters(new GlobalExceptionFilter(logger));
 
   // Global validation pipe - strips unknown properties, forbids non-whitelisted
   app.useGlobalPipes(
@@ -85,12 +85,13 @@ async function bootstrap() {
     maxAge: 86400,
   });
 
+  // Capture raw body for webhook signature verification on payment webhook routes
+  // Must come BEFORE json middleware so webhook bodies stay as raw Buffer
+  app.use('/api/v1/platform/payment-providers/:provider/webhook', express.raw({ type: '*/*' }));
+
   // Request size limits
   app.use(express.json({ limit: '100kb' }));
   app.use(express.urlencoded({ extended: true, limit: '100kb' }));
-
-  // Capture raw body for webhook signature verification on payment webhook routes
-  app.use('/api/v1/platform/payment-providers/*/webhook', express.raw({ type: '*/*' }));
 
   // General rate limiting
   app.use(
