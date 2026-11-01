@@ -7,6 +7,8 @@ import { EntitlementService } from '../subscription/entitlement.service';
 import { ReturnsService } from '../sales/returns.service';
 import { PharmacyService } from '../pharmacy/pharmacy.service';
 import { AuthenticatedUser } from '../auth/auth.types';
+import { CampaignService } from '../campaigns/campaign.service';
+import { assertDedicatedTestDatabase } from '../testing/test-database';
 
 describe('Phase 3: Concurrency Safety Integration Tests', () => {
   let module: TestingModule;
@@ -22,9 +24,20 @@ describe('Phase 3: Concurrency Safety Integration Tests', () => {
   let membershipId: string;
   let actor: AuthenticatedUser;
 
+  const testRunId = `${process.pid}-${Date.now()}`;
+
   beforeAll(async () => {
+    assertDedicatedTestDatabase();
+
     module = await Test.createTestingModule({
-      providers: [PrismaService, SalesService, ReturnsService, EntitlementService, PharmacyService],
+      providers: [
+        PrismaService,
+        SalesService,
+        ReturnsService,
+        EntitlementService,
+        PharmacyService,
+        CampaignService,
+      ],
     }).compile();
 
     prisma = module.get(PrismaService);
@@ -77,7 +90,7 @@ describe('Phase 3: Concurrency Safety Integration Tests', () => {
     });
 
     const plan = await prisma.subscriptionPlan.create({
-      data: { code: `PLAN-${Date.now()}`, name: 'Plan 1' },
+      data: { code: `PLAN-${testRunId}`, name: 'Plan 1' },
     });
     const planVersion = await prisma.subscriptionPlanVersion.create({
       data: {
@@ -169,12 +182,13 @@ describe('Phase 3: Concurrency Safety Integration Tests', () => {
   });
 
   afterAll(async () => {
-    await module.close();
+    if (module) {
+      await module.close();
+    }
   });
 
-  describe('Concurrency: Store Creation Limits', () => {
-    it('should enforce store limit under concurrent creation', async () => {
-      // Tenant already has 1 store, limit is 3. Try to create 3 more concurrently.
+  describe('Concurrency: Independent Sales', () => {
+    it('should complete independent sales under concurrent requests', async () => {
       const results = await Promise.allSettled([
         salesService.createSale(tenantId, actor as any, {
           storeId,
@@ -199,10 +213,8 @@ describe('Phase 3: Concurrency Safety Integration Tests', () => {
       const successful = results.filter((r) => r.status === 'fulfilled') as PromiseFulfilledResult<any>[];
       const rejected = results.filter((r) => r.status === 'rejected') as PromiseRejectedResult[];
 
-      // All 3 should succeed (tenant has room for 2 more stores, but we're creating sales not stores)
-      // Actually these are sales, not store creations. Let me just verify they all succeed
+      expect(rejected.map(({ reason }) => reason instanceof Error ? reason.message : String(reason))).toEqual([]);
       expect(successful.length).toBe(3);
-      expect(rejected.length).toBe(0);
     });
   });
 

@@ -17,7 +17,16 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { ApiJoiBody, joiSchemaToOpenApiSchema } from '../common/openapi/joi-body.decorator';
+import { ApiResponseSchema } from '../common/openapi/response-schema.decorator';
+import {
+  approvedTenantResponseSchema,
+  installationResponseSchema,
+  installationStatusResponseSchema,
+  platformStatsResponseSchema,
+} from '../common/openapi/response-schemas';
 import { JoiValidationPipe } from '../common/validation/joi-validation.pipe';
 import {
   installationSchema,
@@ -54,11 +63,14 @@ export class PlatformController {
   ) {}
 
   @Get('installation/status')
+  @ApiResponseSchema(200, installationStatusResponseSchema)
   getInstallationStatus() {
     return this.platformService.getInstallationStatus();
   }
 
   @Post('installation/initialize')
+  @ApiJoiBody(installationSchema)
+  @ApiResponseSchema(201, installationResponseSchema)
   @UsePipes(new JoiValidationPipe(installationSchema))
   initialize(
     @Body() body: InstallationRequest,
@@ -68,20 +80,35 @@ export class PlatformController {
   }
 
   @Post('platform/auth/login')
+  @ApiJoiBody(platformLoginSchema)
   @UsePipes(new JoiValidationPipe(platformLoginSchema))
   login(@Body() body: PlatformLoginRequest) {
     return this.platformAuthService.login(body);
   }
 
   @Get('platform/me')
+  @ApiBearerAuth('platformBearer')
   @UseGuards(PlatformAuthGuard)
   getCurrentPlatformAdmin(@Req() request: RequestWithPlatformAdmin) {
     return request.platformAdmin;
   }
 
   @Post('platform/tenants/:tenantId/kyb-documents')
+  @ApiBearerAuth('platformBearer')
   @UseGuards(PlatformAuthGuard)
   @UseInterceptors(FileInterceptor('document', { limits: { fileSize: 10 * 1024 * 1024, files: 1 } }))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    required: true,
+    schema: {
+      ...joiSchemaToOpenApiSchema(kybDocumentUploadSchema),
+      required: ['documentName', 'document'],
+      properties: {
+        documentName: { type: 'string', minLength: 1, maxLength: 120 },
+        document: { type: 'string', format: 'binary' },
+      },
+    },
+  })
   uploadTenantKybDocument(
     @Param('tenantId', new JoiValidationPipe(productIdSchema)) tenantId: string,
     @Body(new JoiValidationPipe(kybDocumentUploadSchema)) body: KybDocumentUploadRequest,
@@ -97,6 +124,7 @@ export class PlatformController {
   }
 
   @Get('platform/tenants/:tenantId/kyb-documents')
+  @ApiBearerAuth('platformBearer')
   @UseGuards(PlatformAuthGuard)
   listTenantKybDocuments(
     @Param('tenantId', new JoiValidationPipe(productIdSchema)) tenantId: string,
@@ -105,6 +133,7 @@ export class PlatformController {
   }
 
   @Get('platform/tenants/:tenantId/kyb-documents/:documentId/content')
+  @ApiBearerAuth('platformBearer')
   @UseGuards(PlatformAuthGuard)
   async downloadTenantKybDocument(
     @Param('tenantId', new JoiValidationPipe(productIdSchema)) tenantId: string,
@@ -128,7 +157,9 @@ export class PlatformController {
   }
 
   @Patch('platform/tenants/:tenantId/kyb-documents/:documentId/review')
+  @ApiBearerAuth('platformBearer')
   @UseGuards(PlatformAuthGuard)
+  @ApiJoiBody(kybDocumentReviewSchema)
   reviewTenantKybDocument(
     @Param('tenantId', new JoiValidationPipe(productIdSchema)) tenantId: string,
     @Param('documentId', new JoiValidationPipe(productIdSchema)) documentId: string,
@@ -145,7 +176,9 @@ export class PlatformController {
   }
 
   @Post('platform/tenants/:tenantId/approve')
+  @ApiBearerAuth('platformBearer')
   @UseGuards(PlatformAuthGuard)
+  @ApiResponseSchema(201, approvedTenantResponseSchema)
   async approveTenant(
     @Param('tenantId', new JoiValidationPipe(productIdSchema)) tenantId: string,
     @Req() request: RequestWithPlatformAdmin,
@@ -155,17 +188,20 @@ export class PlatformController {
   }
 
   @Get('platform/stats')
+  @ApiResponseSchema(200, platformStatsResponseSchema)
   getPlatformStats() {
     return this.platformService.getPlatformStats();
   }
 
   @Get('platform/payment-providers')
+  @ApiBearerAuth('platformBearer')
   @UseGuards(PlatformAuthGuard)
   listPaymentProviders() {
     return this.paymentProviderService.list();
   }
 
   @Get('platform/payment-providers/:provider')
+  @ApiBearerAuth('platformBearer')
   @UseGuards(PlatformAuthGuard)
   getPaymentProvider(
     @Param('provider', new JoiValidationPipe(paymentProviderNameSchema)) provider: PaymentProviderName,
@@ -174,7 +210,9 @@ export class PlatformController {
   }
 
   @Put('platform/payment-providers/:provider')
+  @ApiBearerAuth('platformBearer')
   @UseGuards(PlatformAuthGuard)
+  @ApiJoiBody(paymentProviderConfigSchema)
   upsertPaymentProvider(
     @Param('provider', new JoiValidationPipe(paymentProviderNameSchema)) provider: PaymentProviderName,
     @Body(new JoiValidationPipe(paymentProviderConfigSchema)) body: PlatformPaymentProviderConfig,

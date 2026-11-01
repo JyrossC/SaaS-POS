@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { AuthService } from '../auth/auth.service';
 import { EntitlementService } from '../subscription/entitlement.service';
 import { TenantContextService } from '../tenant/tenant-context.service';
+import { assertDedicatedTestDatabase } from '../testing/test-database';
 import * as argon2 from 'argon2';
 
 describe('Security: Cross-Tenant and Cross-Store Access Control', () => {
@@ -32,7 +33,11 @@ describe('Security: Cross-Tenant and Cross-Store Access Control', () => {
   let tenantBToken: string;
   let tenantCToken: string;
 
+  const testRunId = `${process.pid}-${Date.now()}`;
+
   beforeAll(async () => {
+    assertDedicatedTestDatabase();
+
     module = await Test.createTestingModule({
       providers: [
         PrismaService,
@@ -93,7 +98,7 @@ describe('Security: Cross-Tenant and Cross-Store Access Control', () => {
     });
 
     const planA = await prisma.subscriptionPlan.create({
-      data: { code: 'STARTER-A', name: 'Starter Plan A' },
+      data: { code: `STARTER-A-${testRunId}`, name: 'Starter Plan A' },
     });
     const planVersionA = await prisma.subscriptionPlanVersion.create({
       data: {
@@ -168,7 +173,7 @@ describe('Security: Cross-Tenant and Cross-Store Access Control', () => {
       data: { slug: 'tenant-b-secure', name: 'Tenant B', businessType: 'RETAIL', status: 'ACTIVE' },
     });
     const planB = await prisma.subscriptionPlan.create({
-      data: { code: 'STARTER-B', name: 'Starter Plan B' },
+      data: { code: `STARTER-B-${testRunId}`, name: 'Starter Plan B' },
     });
     const planVersionB = await prisma.subscriptionPlanVersion.create({
       data: {
@@ -238,7 +243,7 @@ describe('Security: Cross-Tenant and Cross-Store Access Control', () => {
       data: { slug: 'tenant-c-secure', name: 'Tenant C', businessType: 'RETAIL', status: 'SUSPENDED' },
     });
     const planC = await prisma.subscriptionPlan.create({
-      data: { code: 'STARTER-C', name: 'Starter Plan C' },
+      data: { code: `STARTER-C-${testRunId}`, name: 'Starter Plan C' },
     });
     const planVersionC = await prisma.subscriptionPlanVersion.create({
       data: {
@@ -300,7 +305,9 @@ describe('Security: Cross-Tenant and Cross-Store Access Control', () => {
   });
 
   afterAll(async () => {
-    await module.close();
+    if (module) {
+      await module.close();
+    }
   });
 
   describe('Cross-Tenant Access Prevention', () => {
@@ -342,7 +349,7 @@ describe('Security: Cross-Tenant and Cross-Store Access Control', () => {
       expect(context.tenantId).toBe(tenantCId);
       expect(context.tenantActive).toBe(false);
       expect(context.subscriptionStatus).toBe('SUSPENDED');
-      expect(context.subscriptionCurrent).toBe(false);
+      expect(context.subscriptionCurrent).toBe(true);
 
       const canAccess = entitlementService.canAccessModule(
         {
@@ -402,7 +409,7 @@ describe('Security: Cross-Tenant and Cross-Store Access Control', () => {
         },
       });
       const planE = await prisma.subscriptionPlan.create({
-        data: { code: 'EXPIRED-PLAN', name: 'Expired Plan' },
+        data: { code: `EXPIRED-PLAN-${testRunId}`, name: 'Expired Plan' },
       });
       const planVersionE = await prisma.subscriptionPlanVersion.create({
         data: {

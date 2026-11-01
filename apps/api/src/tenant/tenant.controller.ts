@@ -1,3 +1,4 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -13,6 +14,7 @@ import {
 import { AuthGuard, RequestWithUser } from '../auth/auth.guard';
 import { RequirePermissions } from '../authorization/permission.decorator';
 import { PermissionGuard } from '../authorization/permission.guard';
+import { ApiJoiBody } from '../common/openapi/joi-body.decorator';
 import { JoiValidationPipe } from '../common/validation/joi-validation.pipe';
 import { EntitlementService } from '../subscription/entitlement.service';
 import {
@@ -22,6 +24,7 @@ import {
 import { InviteStaffRequest } from './tenant.types';
 import { TenantService } from './tenant.service';
 
+@ApiBearerAuth('bearer')
 @Controller('tenant')
 @UseGuards(AuthGuard, PermissionGuard)
 export class TenantController {
@@ -55,6 +58,7 @@ export class TenantController {
   @Post('staff/invitations')
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions('staff.invite')
+  @ApiJoiBody(inviteStaffSchema)
   async inviteStaff(
     @Req() request: RequestWithUser,
     @Body(new JoiValidationPipe(inviteStaffSchema)) body: InviteStaffRequest,

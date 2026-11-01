@@ -1,165 +1,28 @@
-# Application Features
+# Application Feature Catalogue
 
-This file describes the functional feature catalogue for the SaaS Multi-Tenant POS Platform. It is organized by business domain and aligned to the project blueprint. All features across all 8 phases are implemented.
+This catalogue describes the full target scope, not a claim that every feature is implemented or release-ready. The [production-readiness roadmap](production-readiness-roadmap.md) is the source of truth for current evidence, workstream ownership, dependencies, acceptance criteria, and release status.
 
-## 1. Platform administration features
+## Full-system scope
 
-### 1.1 SaaS operator controls
-
-- tenant onboarding and lifecycle management (implemented)
-- subscription plan management (implemented)
-- revenue and billing oversight (implemented via reporting module)
-- module catalog and global entitlement configuration (implemented)
-- platform-level RBAC and support access controls (implemented)
-- audit and security oversight for platform operations (implemented)
-- platform-level BI and operational dashboards (implemented via reporting module)
-
-### 1.2 Platform support and governance
-
-- authenticated admin access with least privilege (implemented)
-- audit event capture for support actions (implemented)
-- tenant suspension or reinstatement workflows (implemented via subscription suspend/reactivate)
-- API and service health monitoring (implemented)
-- background job and operational observability (implemented via JobsModule)
-
-## 2. Tenant administration features
-
-- business profile and configuration (implemented)
-- stores and location management (implemented — StoresModule with CRUD)
-- staff invitations and memberships (implemented — TenantModule with membership/role management)
-- role creation and permission assignment (implemented — RBAC with 40+ system permissions)
-- module configuration by tenant (implemented — TenantModuleSetting)
-- subscription overview and limits (implemented — SubscriptionModule)
-- timezone, currency, receipt, tax, and business setting management (implemented)
-- tenant-level audit log review (implemented — AuditLog across all modules)
-
-## 3. Commerce operations
-
-### 3.1 Product and catalogue management
-
-- product catalog and SKU management (implemented — ProductsModule)
-- barcode and product identifier support (implemented — SKU field)
-- category and unit definitions (implemented — baseUnit)
-- price and tax configuration (implemented — sellingPrice)
-- product status and archive workflows (implemented — isActive flag)
-
-### 3.2 Inventory and stock management
-
-- stock balances by store and product (implemented — InventoryBalance)
-- stock adjustments and counts (implemented — StockMovement with reason)
-- stock transfers between stores (implemented via stock movements)
-- low-stock alerts (implemented — ReportingModule inventory report)
-- inventory reporting and movement history (implemented — StockMovement audit trail)
-
-### 3.3 Sales and POS
-
-- cart and checkout flow (implemented — atomic sale creation)
-- discount and promotion handling (implemented — discountAmount fields)
-- automatic server-side price and tax calculation (implemented — server-side only)
-- payment collection and settlement (implemented — SalePayment)
-- receipts and transaction references (implemented — saleNumber, payment reference)
-- sale completion as a single transactional operation (implemented — Prisma $transaction)
-
-### 3.4 Purchasing and suppliers
-
-- supplier records and ordering workflows (implemented — Supplier module)
-- purchase orders and receipts (implemented — PurchaseOrder with line items)
-- goods received handling (implemented — GoodsReceipt with inventory update)
-- supplier returns and vendor reconciliation (implemented — GoodsReceipt links to PO)
-
-### 3.5 Customers, returns, and payments
-
-- customer management and purchase history (implemented — Sale linked to tenant)
-- sales returns and refunds (implemented — ReturnsModule)
-- payment reconciliation (implemented — SubscriptionPayment and SalePayment)
-- cash drawer and cash movement controls (implemented — CashSessionModule)
-- expense tracking and operational journal entries (implemented — StockMovement reason codes)
-
-## 4. Pharmacy features
-
-### 4.1 Pharmacy business configuration
-
-- pharmacy business type configuration (implemented — Tenant.businessType)
-- pharmacy-specific module toggles and entitlement checks (implemented — EntitlementService)
-- regulated access and restricted workflows (implemented — permission-based access)
-
-### 4.2 Batch and inventory controls
-
-- batch tracking and product batch records (implemented — ProductBatch)
-- expiry monitoring (implemented — ReportingModule expiring batches)
-- FEFO allocation preference (implemented — allocateFEFO service)
-- quarantine and risk management (implemented — StockQuarantine)
-- stock availability by expiry status (implemented — batch inventory queries)
-
-### 4.3 Prescription and dispensing
-
-- prescription intake and tracking (implemented — Prescription/PrescriptionItem)
-- prescription item validation (implemented — server-side validation)
-- dispensing records and traceability (implemented — DispensingRecord/DispensingItem)
-- restricted access for pharmacist or qualified roles (implemented — RBAC)
-- batch and stock validation before dispensing (implemented — FEFO allocation with stock check)
-
-### 4.4 Pharmacy reporting
-
-- expiry exposure reporting (implemented — ReportingModule expiring batches)
-- batch-level inventory summaries (implemented — BatchInventory)
-- dispensing and prescription analytics (implemented — DispensingRecord audit trail)
-- pharmacy-specific operational risk metrics (implemented via reporting)
-
-## 5. Business intelligence
-
-- total sales and revenue summaries (implemented — ReportingModule sales-summary)
-- store performance comparison (implemented — ReportingModule store-comparison)
-- inventory valuation and risk metrics (implemented — ReportingModule inventory report)
-- low-stock and expiry exposure views (implemented — ReportingModule inventory report)
-- product sales trends and demand analysis (implemented — ReportingModule topProducts)
-
-**Not implemented (future work):**
-- gross profit and margin reports — cost-of-goods data not yet tracked at sufficient granularity
-- report export capability (CSV/PDF) — no export endpoint implemented
-
-## 6. AI-assisted analytics
-
-- rule-based query classification for read-only analytical reporting (implemented — AIService keyword-based intent classification)
-- decision-support commentary with business reasoning (implemented — AIService summary)
-- limits on access to sensitive or non-authorized data (implemented — tenant-scoped queries)
-
-**Not implemented (future work):**
-- sales forecasting — no ML model or forecasting algorithm implemented
-- inventory replenishment recommendation — no replenishment logic implemented
-- explanation and confidence indicators — no confidence scoring implemented
-
-AI actions must not bypass validation, entitlement, or tenant scoping rules.
-
-## 7. Cross-cutting capabilities
-
-- authorization by perms + scope (implemented — PermissionGuard + TenantContextService)
-- audit logging for sensitive actions (implemented — AuditLog across all modules)
-- structured error handling without secret leakage (implemented — standardized API errors)
-- empty-state pages for genuinely empty datasets (implemented — EmptyState component)
-- analytics respecting tenant/store permissions (implemented — tenant-scoped queries)
-- background jobs for scheduled tasks and asynchronous operations (implemented — JobsModule)
-
-## 8. Feature readiness matrix
-
-| Feature area | Status | Implementation gate | Implemented |
+| Domain | Required capabilities | Current evidence summary | Roadmap |
 |---|---|---|---|
-| Platform admin | Complete | Subscription and tenant rules first | Yes |
-| Tenant admin | Complete | Identity + memberships + RBAC first | Yes |
-| Products and inventory | Complete | Tenant-scoped catalogue reads/creation and store-scoped idempotent stock adjustments | Yes |
-| POS and sales | Complete | Transaction integrity and stock invariants | Yes |
-| Purchasing | Complete | Supplier and stock rules | Yes |
-| Pharmacy | Complete | FEFO, expiry, dispensing, audit | Yes |
-| BI | Complete | Data model and metric definitions (gross profit and export not yet implemented) | Partial |
-| AI analytics | Complete | Rule-based classification only; no forecasting or ML (see section 6) | Partial |
-| Cash sessions | Complete | Cash drawer management | Yes |
-| Returns & refunds | Complete | Inventory restoration | Yes |
+| Platform administration | Platform operators, tenant onboarding/review/suspension, plans, entitlements, billing oversight, support controls, audit, platform analytics | Auth, installation, KYB, and provider configuration code exists; complete lifecycle and admin UI are not established | R2, R3, R6 |
+| Tenant administration | Business configuration, stores, staff/memberships, roles/permissions, settings, subscription/limits, tenant audit | Tenant/store/membership and permission foundations exist; complete settings, admin UX, and lifecycle acceptance remain | R2, R3 |
+| Retail catalog | Products, categories/units, identifiers/barcodes, price/tax configuration, archive/status | Product APIs/schema exist; broader catalog rules and end-to-end UI are incomplete or unverified | R4.1 |
+| Inventory and purchasing | Balances, counts/adjustments, transfers, movements, suppliers, purchase orders, receipts, supplier returns, costing | Stock adjustment and purchasing services exist; complete count/transfer/return/cost workflows are not established | R4.2, R4.3, R4.10 |
+| POS, payments, and cash | Cart/checkout, server-side totals, discounts, payment, receipts, cash sessions/movements, voids, refunds | Transactional sale and cash-session services exist; financial rules, receipt/UI coverage, idempotency, and reconciliation remain | R4.4–R4.6, R4.9 |
+| Customers and promotions | Customer records/history/consent, campaigns, segments, eligibility and limits | Campaign code exists; a complete customer workflow and promotion acceptance are not established | R4.7, R4.8 |
+| Pharmacy | Drug catalogue, batches, expiry/FEFO, prescriptions, dispensing, quarantine, return/recall, pharmacy reports | Batch/FEFO/dispensing service code exists; UI, regulatory rules, and passing workflow tests remain | R5 |
+| Business intelligence | Sales, inventory, store/platform metrics, costing/margin, risk/expiry reports, CSV/PDF exports | Several report endpoints and charts exist; hard-coded UI deltas, margin, exports, platform BI, and metric reconciliation remain | R6.1–R6.3, R6.5 |
+| AI-assisted analysis | Scoped read-only analysis, explanations, forecasting, replenishment recommendations, evaluation and privacy boundaries | Rule-based analytical query classification exists; forecasts and recommendations are not implemented | R6.4 |
+| Cross-cutting platform | Tenant/store authorization, audit, notifications, integrations, jobs, offline POS/sync, monitoring and recovery | Foundations exist in some areas; end-to-end security, delivery, offline operation, and production evidence remain | R2.7–R2.8, R7, R8 |
 
-## 9. Non-functional product commitments
+## Status interpretation
 
-- no fabricated operational business data
-- no hidden security controls in the UI
-- no front-end authoritative price or tax computation
-- no partial sales state
-- no expiry-unsafe pharmacy sales
-- no audit gaps on sensitive actions
+- **Present in code** is not equivalent to a complete user workflow.
+- **Documented** is not equivalent to implemented.
+- **Implemented** is not equivalent to verified; completion requires measurable acceptance evidence.
+- The full-system release includes offline capability and all other blueprint scope. No reduced pilot is implied.
+- Product and regulatory decisions that affect acceptance criteria are recorded as blockers in the roadmap's decision register.
+
+See the [authoritative requirements blueprint](SaaS-Multi-Tenant-POS-Platform-Requirement.md) for source requirements and the roadmap's [full-system release gates](production-readiness-roadmap.md) for shipment criteria.

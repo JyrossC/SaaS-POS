@@ -1,3 +1,4 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -16,6 +17,8 @@ import { RequestWithUser } from '../auth/auth.guard';
 import { AuthGuard } from '../auth/auth.guard';
 import { RequirePermissions } from '../authorization/permission.decorator';
 import { PermissionGuard } from '../authorization/permission.guard';
+import { ApiRequestBody } from '../common/openapi/request-body.decorator';
+import { createSaleBodySchema, reasonBodySchema } from '../common/openapi/request-body-schemas';
 import { TenantContextService } from '../tenant/tenant-context.service';
 import { EntitlementService } from '../subscription/entitlement.service';
 import { JoiValidationPipe } from '../common/validation/joi-validation.pipe';
@@ -25,6 +28,7 @@ import {
 } from '../common/validation/schemas';
 import { CreateSaleInput, SalesService } from './sales.service';
 
+@ApiBearerAuth('bearer')
 @Controller('sales')
 @UseGuards(AuthGuard, PermissionGuard)
 export class SalesController {
@@ -37,6 +41,7 @@ export class SalesController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions('sales.create')
+  @ApiRequestBody(createSaleBodySchema)
   async createSale(
     @Req() request: RequestWithUser,
     @Body() body: CreateSaleInput,
@@ -95,6 +100,7 @@ export class SalesController {
   @Post(':saleId/void')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('sales.void')
+  @ApiRequestBody(reasonBodySchema, false)
   @UsePipes(new JoiValidationPipe(saleIdParamSchema))
   async voidSale(
     @Req() request: RequestWithUser,

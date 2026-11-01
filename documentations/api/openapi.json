@@ -1,0 +1,4813 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ok",
+                        "degraded"
+                      ]
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "database": {
+                      "type": "string",
+                      "enum": [
+                        "connected",
+                        "disconnected"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "timestamp",
+                    "database"
+                  ],
+                  "additionalProperties": false,
+                  "oneOf": [
+                    {
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "ok"
+                          ]
+                        },
+                        "database": {
+                          "type": "string",
+                          "enum": [
+                            "connected"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "degraded"
+                          ]
+                        },
+                        "database": {
+                          "type": "string",
+                          "enum": [
+                            "disconnected"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "AuthController_getCurrentUser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "minLength": 1
+                  },
+                  "tenantSlug": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                    "minLength": 1
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "email",
+                  "tenantSlug",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accessToken": {
+                      "type": "string"
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "membershipId": {
+                          "type": "string"
+                        },
+                        "tenantId": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string",
+                          "format": "email"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "roleNames": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "permissions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "storeIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "allStoreAccess": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "membershipId",
+                        "tenantId",
+                        "email",
+                        "role",
+                        "roleNames",
+                        "permissions",
+                        "storeIds",
+                        "allStoreAccess"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "accessToken",
+                    "user"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tenantName": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 120
+                  },
+                  "tenantSlug": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                    "minLength": 2,
+                    "maxLength": 60
+                  },
+                  "businessType": {
+                    "type": "string",
+                    "enum": [
+                      "RETAIL",
+                      "PHARMACY",
+                      "HYBRID"
+                    ],
+                    "minLength": 1
+                  },
+                  "ownerName": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 120
+                  },
+                  "ownerEmail": {
+                    "type": "string",
+                    "format": "email",
+                    "minLength": 1
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 128
+                  },
+                  "planCode": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "tenantName",
+                  "tenantSlug",
+                  "businessType",
+                  "ownerName",
+                  "ownerEmail",
+                  "password",
+                  "planCode"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accessToken": {
+                      "type": "string"
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "membershipId": {
+                          "type": "string"
+                        },
+                        "tenantId": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string",
+                          "format": "email"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "roleNames": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "permissions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "storeIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "allStoreAccess": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "membershipId",
+                        "tenantId",
+                        "email",
+                        "role",
+                        "roleNames",
+                        "permissions",
+                        "storeIds",
+                        "allStoreAccess"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "accessToken",
+                    "user"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/invitations/accept": {
+      "post": {
+        "operationId": "AuthController_acceptInvitation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 120
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 128
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "token",
+                  "name",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accessToken": {
+                      "type": "string"
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "membershipId": {
+                          "type": "string"
+                        },
+                        "tenantId": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string",
+                          "format": "email"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "roleNames": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "permissions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "storeIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "allStoreAccess": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "membershipId",
+                        "tenantId",
+                        "email",
+                        "role",
+                        "roleNames",
+                        "permissions",
+                        "storeIds",
+                        "allStoreAccess"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "accessToken",
+                    "user"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/password/forgot": {
+      "post": {
+        "operationId": "AuthController_forgotPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "minLength": 1
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "email"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "token"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/password/reset": {
+      "post": {
+        "operationId": "AuthController_resetPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 128
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "token",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "loggedOut": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "loggedOut"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/tenant/me": {
+      "get": {
+        "operationId": "TenantController_getCurrentTenant",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Tenant"
+        ]
+      }
+    },
+    "/api/v1/tenant/staff": {
+      "get": {
+        "operationId": "TenantController_listStaff",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Tenant"
+        ]
+      }
+    },
+    "/api/v1/tenant/staff/invitations": {
+      "post": {
+        "operationId": "TenantController_inviteStaff",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "minLength": 1
+                  },
+                  "roleId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "email",
+                  "roleId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Tenant"
+        ]
+      }
+    },
+    "/api/v1/tenant/roles": {
+      "get": {
+        "operationId": "TenantController_listRoles",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Tenant"
+        ]
+      }
+    },
+    "/api/v1/subscription": {
+      "get": {
+        "operationId": "SubscriptionController_getDetails",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
+    "/api/v1/subscription/change-plan": {
+      "post": {
+        "operationId": "SubscriptionController_changePlan",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "planCode": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "planCode"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
+    "/api/v1/subscription/renew": {
+      "post": {
+        "operationId": "SubscriptionController_renew",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "planCode": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
+    "/api/v1/subscription/suspend": {
+      "post": {
+        "operationId": "SubscriptionController_suspend",
+        "parameters": [],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
+    "/api/v1/subscription/reactivate": {
+      "post": {
+        "operationId": "SubscriptionController_reactivate",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
+    "/api/v1/subscription/invoices": {
+      "get": {
+        "operationId": "SubscriptionController_getInvoices",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
+    "/api/v1/subscription/invoices/{invoiceId}/pay": {
+      "post": {
+        "operationId": "SubscriptionController_recordPayment",
+        "parameters": [
+          {
+            "name": "invoiceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "pattern": "^(?:0|[1-9]\\d{0,14})(?:\\.\\d{1,4})?$",
+                    "minLength": 1
+                  },
+                  "providerReference": {
+                    "type": "string",
+                    "nullable": true,
+                    "minLength": 0
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "amount"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
+    "/api/v1/products": {
+      "get": {
+        "operationId": "ProductsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Products"
+        ]
+      },
+      "post": {
+        "operationId": "ProductsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sku": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 2000,
+                    "minLength": 0
+                  },
+                  "baseUnit": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 32
+                  },
+                  "sellingPrice": {
+                    "type": "string",
+                    "pattern": "^(?:0|[1-9]\\d{0,14})(?:\\.\\d{1,4})?$",
+                    "minLength": 1
+                  },
+                  "costPrice": {
+                    "type": "string",
+                    "nullable": true,
+                    "pattern": "^(?:0|[1-9]\\d{0,14})(?:\\.\\d{1,4})?$",
+                    "minLength": 1
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "sku",
+                  "name",
+                  "baseUnit",
+                  "sellingPrice"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Products"
+        ]
+      }
+    },
+    "/api/v1/products/{productId}": {
+      "get": {
+        "operationId": "ProductsController_getById",
+        "parameters": [
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Products"
+        ]
+      }
+    },
+    "/api/v1/stores/{storeId}/inventory": {
+      "get": {
+        "operationId": "InventoryController_list",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Inventory"
+        ]
+      }
+    },
+    "/api/v1/stores/{storeId}/inventory/stock-adjustments": {
+      "post": {
+        "operationId": "InventoryController_adjust",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "quantityDelta": {
+                    "type": "string",
+                    "pattern": "^-?(?:0|[1-9]\\d{0,14})(?:\\.\\d{1,4})?$",
+                    "minLength": 1,
+                    "not": {
+                      "enum": [
+                        "0",
+                        "-0",
+                        "0.0",
+                        "-0.0",
+                        "0.00",
+                        "-0.00",
+                        "0.000",
+                        "-0.000",
+                        "0.0000",
+                        "-0.0000"
+                      ]
+                    }
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "productId",
+                  "quantityDelta",
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Inventory"
+        ]
+      }
+    },
+    "/api/v1/stores": {
+      "post": {
+        "operationId": "StoresController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 32,
+                    "pattern": "^[A-Z0-9]+(?:-[A-Z0-9]+)*$"
+                  },
+                  "location": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 500,
+                    "minLength": 0
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "name",
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Stores"
+        ]
+      },
+      "get": {
+        "operationId": "StoresController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Stores"
+        ]
+      }
+    },
+    "/api/v1/stores/{storeId}": {
+      "get": {
+        "operationId": "StoresController_getById",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Stores"
+        ]
+      },
+      "patch": {
+        "operationId": "StoresController_update",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 32,
+                    "pattern": "^[A-Z0-9]+(?:-[A-Z0-9]+)*$"
+                  },
+                  "location": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 500,
+                    "minLength": 0
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "ACTIVE",
+                      "INACTIVE"
+                    ],
+                    "minLength": 1
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Stores"
+        ]
+      }
+    },
+    "/api/v1/stores/{storeId}/deactivate": {
+      "patch": {
+        "operationId": "StoresController_deactivate",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Stores"
+        ]
+      }
+    },
+    "/api/v1/purchasing/suppliers": {
+      "post": {
+        "operationId": "PurchasingController_createSupplier",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "contactName": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "email": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "phone": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "address": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Purchasing"
+        ]
+      },
+      "get": {
+        "operationId": "PurchasingController_listSuppliers",
+        "parameters": [
+          {
+            "name": "search",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Purchasing"
+        ]
+      }
+    },
+    "/api/v1/purchasing/suppliers/{supplierId}": {
+      "get": {
+        "operationId": "PurchasingController_getSupplier",
+        "parameters": [
+          {
+            "name": "supplierId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Purchasing"
+        ]
+      },
+      "post": {
+        "operationId": "PurchasingController_updateSupplier",
+        "parameters": [
+          {
+            "name": "supplierId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "contactName": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "email": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "phone": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "address": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "ACTIVE",
+                      "INACTIVE"
+                    ]
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Purchasing"
+        ]
+      }
+    },
+    "/api/v1/purchasing/purchase-orders": {
+      "post": {
+        "operationId": "PurchasingController_createPurchaseOrder",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "storeId": {
+                    "type": "string"
+                  },
+                  "supplierId": {
+                    "type": "string"
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "productId": {
+                          "type": "string"
+                        },
+                        "quantityOrdered": {
+                          "type": "string"
+                        },
+                        "unitCost": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "productId",
+                        "quantityOrdered",
+                        "unitCost"
+                      ]
+                    }
+                  },
+                  "notes": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "storeId",
+                  "supplierId",
+                  "items"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Purchasing"
+        ]
+      },
+      "get": {
+        "operationId": "PurchasingController_listPurchaseOrders",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Purchasing"
+        ]
+      }
+    },
+    "/api/v1/purchasing/purchase-orders/{orderId}": {
+      "get": {
+        "operationId": "PurchasingController_getPurchaseOrder",
+        "parameters": [
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Purchasing"
+        ]
+      }
+    },
+    "/api/v1/purchasing/purchase-orders/{orderId}/approve": {
+      "post": {
+        "operationId": "PurchasingController_approvePurchaseOrder",
+        "parameters": [
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Purchasing"
+        ]
+      }
+    },
+    "/api/v1/purchasing/goods-receipts": {
+      "post": {
+        "operationId": "PurchasingController_receiveGoods",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "storeId": {
+                    "type": "string"
+                  },
+                  "purchaseOrderId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "productId": {
+                          "type": "string"
+                        },
+                        "quantityReceived": {
+                          "type": "string"
+                        },
+                        "unitCost": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "productId",
+                        "quantityReceived",
+                        "unitCost"
+                      ]
+                    }
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "storeId",
+                  "items"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Purchasing"
+        ]
+      },
+      "get": {
+        "operationId": "PurchasingController_listGoodsReceipts",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Purchasing"
+        ]
+      }
+    },
+    "/api/v1/sales": {
+      "post": {
+        "operationId": "SalesController_createSale",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "storeId": {
+                    "type": "string"
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "productId": {
+                          "type": "string"
+                        },
+                        "quantity": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "productId",
+                        "quantity"
+                      ]
+                    }
+                  },
+                  "payments": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "paymentMethod": {
+                          "type": "string"
+                        },
+                        "amount": {
+                          "type": "string"
+                        },
+                        "reference": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "paymentMethod",
+                        "amount"
+                      ]
+                    }
+                  },
+                  "notes": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "idempotencyKey": {
+                    "type": "string"
+                  },
+                  "campaignId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "promoCode": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "storeId",
+                  "items",
+                  "payments",
+                  "idempotencyKey"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Sales"
+        ]
+      },
+      "get": {
+        "operationId": "SalesController_listSales",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Sales"
+        ]
+      }
+    },
+    "/api/v1/sales/{saleId}": {
+      "get": {
+        "operationId": "SalesController_getSale",
+        "parameters": [
+          {
+            "name": "saleId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Sales"
+        ]
+      }
+    },
+    "/api/v1/sales/{saleId}/void": {
+      "post": {
+        "operationId": "SalesController_voidSale",
+        "parameters": [
+          {
+            "name": "saleId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Sales"
+        ]
+      }
+    },
+    "/api/v1/cash-sessions/open": {
+      "post": {
+        "operationId": "CashSessionController_open",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "storeId": {
+                    "type": "string"
+                  },
+                  "openingBalance": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "storeId",
+                  "openingBalance"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "CashSession"
+        ]
+      }
+    },
+    "/api/v1/cash-sessions/{sessionId}/close": {
+      "post": {
+        "operationId": "CashSessionController_close",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "closingBalance": {
+                    "type": "string"
+                  },
+                  "notes": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "closingBalance"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "CashSession"
+        ]
+      }
+    },
+    "/api/v1/cash-sessions/current/{storeId}": {
+      "get": {
+        "operationId": "CashSessionController_getCurrent",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "CashSession"
+        ]
+      }
+    },
+    "/api/v1/cash-sessions/{sessionId}": {
+      "get": {
+        "operationId": "CashSessionController_getById",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "CashSession"
+        ]
+      }
+    },
+    "/api/v1/cash-sessions": {
+      "get": {
+        "operationId": "CashSessionController_list",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "CashSession"
+        ]
+      }
+    },
+    "/api/v1/returns": {
+      "post": {
+        "operationId": "ReturnsController_createRefund",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "saleId": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "saleItemId": {
+                          "type": "string"
+                        },
+                        "quantity": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "saleItemId",
+                        "quantity"
+                      ]
+                    }
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "saleId",
+                  "reason",
+                  "items"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Returns"
+        ]
+      },
+      "get": {
+        "operationId": "ReturnsController_listRefunds",
+        "parameters": [
+          {
+            "name": "saleId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Returns"
+        ]
+      }
+    },
+    "/api/v1/returns/{refundId}": {
+      "get": {
+        "operationId": "ReturnsController_getRefund",
+        "parameters": [
+          {
+            "name": "refundId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Returns"
+        ]
+      }
+    },
+    "/api/v1/pharmacy/drug-details": {
+      "post": {
+        "operationId": "PharmacyController_createDrugDetail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string"
+                  },
+                  "genericName": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "brandName": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "strength": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "dosageForm": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "manufacturer": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "regulatoryCategory": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "prescriptionRequired": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "productId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Pharmacy"
+        ]
+      }
+    },
+    "/api/v1/pharmacy/drug-details/{productId}": {
+      "get": {
+        "operationId": "PharmacyController_getDrugDetail",
+        "parameters": [
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Pharmacy"
+        ]
+      }
+    },
+    "/api/v1/pharmacy/batches": {
+      "post": {
+        "operationId": "PharmacyController_createBatch",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "storeId": {
+                    "type": "string"
+                  },
+                  "productId": {
+                    "type": "string"
+                  },
+                  "batchNumber": {
+                    "type": "string"
+                  },
+                  "supplierId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "manufacturedAt": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "expiresAt": {
+                    "type": "string"
+                  },
+                  "quantityReceived": {
+                    "type": "string"
+                  },
+                  "costPerUnit": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "storeId",
+                  "productId",
+                  "batchNumber",
+                  "expiresAt",
+                  "quantityReceived"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Pharmacy"
+        ]
+      },
+      "get": {
+        "operationId": "PharmacyController_listBatches",
+        "parameters": [
+          {
+            "name": "productId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Pharmacy"
+        ]
+      }
+    },
+    "/api/v1/pharmacy/batches/expiring": {
+      "get": {
+        "operationId": "PharmacyController_getExpiringBatches",
+        "parameters": [
+          {
+            "name": "days",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Pharmacy"
+        ]
+      }
+    },
+    "/api/v1/pharmacy/dispense": {
+      "post": {
+        "operationId": "PharmacyController_dispense",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "storeId": {
+                    "type": "string"
+                  },
+                  "prescriptionId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "productId": {
+                          "type": "string"
+                        },
+                        "quantity": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "productId",
+                        "quantity"
+                      ]
+                    }
+                  },
+                  "notes": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "storeId",
+                  "items"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Pharmacy"
+        ]
+      }
+    },
+    "/api/v1/pharmacy/prescriptions": {
+      "post": {
+        "operationId": "PharmacyController_createPrescription",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "storeId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "patientName": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 200,
+                    "minLength": 0
+                  },
+                  "patientId": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 100,
+                    "minLength": 0
+                  },
+                  "prescriberName": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 200,
+                    "minLength": 0
+                  },
+                  "prescriberLicense": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 100,
+                    "minLength": 0
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "productId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "quantityPrescribed": {
+                          "type": "string",
+                          "pattern": "^(?:0|[1-9]\\d{0,14})(?:\\.\\d{1,4})?$",
+                          "minLength": 1,
+                          "not": {
+                            "enum": [
+                              "0",
+                              "-0",
+                              "0.0",
+                              "-0.0",
+                              "0.00",
+                              "-0.00",
+                              "0.000",
+                              "-0.000",
+                              "0.0000",
+                              "-0.0000"
+                            ]
+                          }
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "productId",
+                        "quantityPrescribed"
+                      ]
+                    },
+                    "minItems": 1
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "storeId",
+                  "items"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Pharmacy"
+        ]
+      },
+      "get": {
+        "operationId": "PharmacyController_listPrescriptions",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "patientName",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Pharmacy"
+        ]
+      }
+    },
+    "/api/v1/pharmacy/prescriptions/{prescriptionId}": {
+      "get": {
+        "operationId": "PharmacyController_getPrescription",
+        "parameters": [
+          {
+            "name": "prescriptionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Pharmacy"
+        ]
+      }
+    },
+    "/api/v1/pharmacy/quarantine": {
+      "post": {
+        "operationId": "PharmacyController_quarantineStock",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "storeId": {
+                    "type": "string"
+                  },
+                  "batchId": {
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "storeId",
+                  "batchId",
+                  "quantity",
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Pharmacy"
+        ]
+      }
+    },
+    "/api/v1/pharmacy/quarantine/{quarantineId}/release": {
+      "post": {
+        "operationId": "PharmacyController_releaseQuarantine",
+        "parameters": [
+          {
+            "name": "quarantineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Pharmacy"
+        ]
+      }
+    },
+    "/api/v1/campaigns": {
+      "post": {
+        "operationId": "CampaignController_createCampaign",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 1000,
+                    "minLength": 0
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "PERCENTAGE_DISCOUNT",
+                      "FIXED_AMOUNT_DISCOUNT",
+                      "BUY_X_GET_Y",
+                      "BUNDLE_PRICING",
+                      "TIERED_SPEND"
+                    ],
+                    "minLength": 1
+                  },
+                  "mechanism": {
+                    "type": "string",
+                    "enum": [
+                      "PROMO_CODE",
+                      "AUTOMATIC",
+                      "BOTH"
+                    ],
+                    "minLength": 1
+                  },
+                  "promoCode": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 50,
+                    "minLength": 0
+                  },
+                  "value": {
+                    "type": "string",
+                    "pattern": "^(?:0|[1-9]\\d{0,14})(?:\\.\\d{1,4})?$",
+                    "minLength": 1
+                  },
+                  "buyQuantity": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "getQuantity": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "TENANT_WIDE"
+                    ],
+                    "minLength": 1
+                  },
+                  "customerTargeting": {
+                    "type": "string",
+                    "enum": [
+                      "ALL_CUSTOMERS",
+                      "LOYALTY_MEMBERS",
+                      "FIRST_TIME_BUYERS",
+                      "SEGMENT_BASED"
+                    ],
+                    "minLength": 1
+                  },
+                  "segmentIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    ],
+                    "minLength": 1
+                  },
+                  "endDate": {
+                    "type": "string",
+                    "nullable": true,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    ],
+                    "minLength": 1
+                  },
+                  "recurrenceType": {
+                    "type": "string",
+                    "enum": [
+                      "NONE",
+                      "DAILY",
+                      "WEEKLY",
+                      "MONTHLY",
+                      "YEARLY"
+                    ],
+                    "minLength": 1
+                  },
+                  "recurrenceInterval": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxUses": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxUsesPerCustomer": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxUsesPerCustomerPerDay": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxUsesPerStore": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "minOrderAmount": {
+                    "type": "string",
+                    "nullable": true,
+                    "pattern": "^(?:0|[1-9]\\d{0,14})(?:\\.\\d{1,4})?$",
+                    "minLength": 1
+                  },
+                  "minQuantity": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "allowedPaymentMethods": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "stackingRule": {
+                    "type": "string",
+                    "enum": [
+                      "STACKABLE",
+                      "BEST_ONLY",
+                      "EXCLUSIVE"
+                    ],
+                    "minLength": 1
+                  },
+                  "productIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "name",
+                  "type",
+                  "mechanism",
+                  "value",
+                  "startDate"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Campaign"
+        ]
+      },
+      "get": {
+        "operationId": "CampaignController_listCampaigns",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Campaign"
+        ]
+      }
+    },
+    "/api/v1/campaigns/{campaignId}": {
+      "get": {
+        "operationId": "CampaignController_getCampaign",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Campaign"
+        ]
+      },
+      "patch": {
+        "operationId": "CampaignController_updateCampaign",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 1000,
+                    "minLength": 0
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "PERCENTAGE_DISCOUNT",
+                      "FIXED_AMOUNT_DISCOUNT",
+                      "BUY_X_GET_Y",
+                      "BUNDLE_PRICING",
+                      "TIERED_SPEND"
+                    ],
+                    "minLength": 1
+                  },
+                  "mechanism": {
+                    "type": "string",
+                    "enum": [
+                      "PROMO_CODE",
+                      "AUTOMATIC",
+                      "BOTH"
+                    ],
+                    "minLength": 1
+                  },
+                  "promoCode": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 50,
+                    "minLength": 0
+                  },
+                  "value": {
+                    "type": "string",
+                    "pattern": "^(?:0|[1-9]\\d{0,14})(?:\\.\\d{1,4})?$",
+                    "minLength": 1
+                  },
+                  "buyQuantity": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "getQuantity": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "TENANT_WIDE"
+                    ],
+                    "minLength": 1
+                  },
+                  "customerTargeting": {
+                    "type": "string",
+                    "enum": [
+                      "ALL_CUSTOMERS",
+                      "LOYALTY_MEMBERS",
+                      "FIRST_TIME_BUYERS",
+                      "SEGMENT_BASED"
+                    ],
+                    "minLength": 1
+                  },
+                  "segmentIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    ],
+                    "minLength": 1
+                  },
+                  "endDate": {
+                    "type": "string",
+                    "nullable": true,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    ],
+                    "minLength": 1
+                  },
+                  "recurrenceType": {
+                    "type": "string",
+                    "enum": [
+                      "NONE",
+                      "DAILY",
+                      "WEEKLY",
+                      "MONTHLY",
+                      "YEARLY"
+                    ],
+                    "minLength": 1
+                  },
+                  "recurrenceInterval": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxUses": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxUsesPerCustomer": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxUsesPerCustomerPerDay": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxUsesPerStore": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "minOrderAmount": {
+                    "type": "string",
+                    "nullable": true,
+                    "pattern": "^(?:0|[1-9]\\d{0,14})(?:\\.\\d{1,4})?$",
+                    "minLength": 1
+                  },
+                  "minQuantity": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "allowedPaymentMethods": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "stackingRule": {
+                    "type": "string",
+                    "enum": [
+                      "STACKABLE",
+                      "BEST_ONLY",
+                      "EXCLUSIVE"
+                    ],
+                    "minLength": 1
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "DRAFT",
+                      "ACTIVE",
+                      "PAUSED",
+                      "EXPIRED"
+                    ],
+                    "minLength": 1
+                  },
+                  "productIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Campaign"
+        ]
+      },
+      "delete": {
+        "operationId": "CampaignController_deleteCampaign",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Campaign"
+        ]
+      }
+    },
+    "/api/v1/campaigns/{campaignId}/analytics": {
+      "get": {
+        "operationId": "CampaignController_getCampaignAnalytics",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Campaign"
+        ]
+      }
+    },
+    "/api/v1/campaigns/segments": {
+      "post": {
+        "operationId": "CampaignController_createCustomerSegment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "LOYALTY",
+                      "FIRST_TIME",
+                      "VIP",
+                      "INACTIVE",
+                      "CUSTOM"
+                    ],
+                    "minLength": 1
+                  },
+                  "rules": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": true,
+                    "default": {}
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 1000,
+                    "minLength": 0
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "name",
+                  "type"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Campaign"
+        ]
+      },
+      "get": {
+        "operationId": "CampaignController_listCustomerSegments",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Campaign"
+        ]
+      }
+    },
+    "/api/v1/campaigns/segments/{segmentId}": {
+      "get": {
+        "operationId": "CampaignController_getCustomerSegment",
+        "parameters": [
+          {
+            "name": "segmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Campaign"
+        ]
+      },
+      "patch": {
+        "operationId": "CampaignController_updateCustomerSegment",
+        "parameters": [
+          {
+            "name": "segmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "LOYALTY",
+                      "FIRST_TIME",
+                      "VIP",
+                      "INACTIVE",
+                      "CUSTOM"
+                    ],
+                    "minLength": 1
+                  },
+                  "rules": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": true
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 1000,
+                    "minLength": 0
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Campaign"
+        ]
+      },
+      "delete": {
+        "operationId": "CampaignController_deleteCustomerSegment",
+        "parameters": [
+          {
+            "name": "segmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Campaign"
+        ]
+      }
+    },
+    "/api/v1/campaigns/segments/{segmentId}/customers/{customerId}": {
+      "post": {
+        "operationId": "CampaignController_addCustomerToSegment",
+        "parameters": [
+          {
+            "name": "segmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Campaign"
+        ]
+      },
+      "delete": {
+        "operationId": "CampaignController_removeCustomerFromSegment",
+        "parameters": [
+          {
+            "name": "segmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Campaign"
+        ]
+      }
+    },
+    "/api/v1/reports/sales-summary": {
+      "get": {
+        "operationId": "ReportingController_getSalesSummary",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Reporting"
+        ]
+      }
+    },
+    "/api/v1/reports/inventory": {
+      "get": {
+        "operationId": "ReportingController_getInventoryReport",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lowStockThreshold",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Reporting"
+        ]
+      }
+    },
+    "/api/v1/reports/store-comparison": {
+      "get": {
+        "operationId": "ReportingController_getStoreComparison",
+        "parameters": [
+          {
+            "name": "startDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Reporting"
+        ]
+      }
+    },
+    "/api/v1/ai/query": {
+      "post": {
+        "operationId": "AIController_query",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string"
+                  },
+                  "storeId": {
+                    "type": "string"
+                  },
+                  "startDate": {
+                    "type": "string"
+                  },
+                  "endDate": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "query"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "query": {
+                      "type": "string"
+                    },
+                    "intent": {
+                      "type": "string",
+                      "enum": [
+                        "sales_summary",
+                        "inventory_status",
+                        "top_products",
+                        "store_comparison",
+                        "low_stock_alert",
+                        "unknown"
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "summary": {
+                      "type": "string"
+                    },
+                    "generatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "query",
+                    "intent",
+                    "data",
+                    "summary",
+                    "generatedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "AI"
+        ]
+      }
+    },
+    "/api/v1/ai/capabilities": {
+      "get": {
+        "operationId": "AIController_getCapabilities",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "supportedQueries": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "classificationMethod": {
+                      "type": "string",
+                      "enum": [
+                        "rule-based keyword matching"
+                      ]
+                    },
+                    "providesForecasting": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "providesConfidenceScoring": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "providesReplenishmentRecommendations": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  },
+                  "required": [
+                    "supportedQueries",
+                    "description",
+                    "classificationMethod",
+                    "providesForecasting",
+                    "providesConfidenceScoring",
+                    "providesReplenishmentRecommendations"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "AI"
+        ]
+      }
+    },
+    "/api/v1/jobs/stats": {
+      "get": {
+        "operationId": "JobsController_getStats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Jobs"
+        ]
+      }
+    },
+    "/api/v1/jobs/failed": {
+      "get": {
+        "operationId": "JobsController_getFailedJobs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Jobs"
+        ]
+      }
+    },
+    "/api/v1/jobs/failed/{jobId}/retry": {
+      "post": {
+        "operationId": "JobsController_retryFailedJob",
+        "parameters": [
+          {
+            "name": "jobId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Jobs"
+        ]
+      }
+    },
+    "/api/v1/jobs/process-due": {
+      "post": {
+        "operationId": "JobsController_processDueJobs",
+        "parameters": [],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "limit": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Jobs"
+        ]
+      }
+    },
+    "/api/v1/jobs/enqueue": {
+      "post": {
+        "operationId": "JobsController_enqueueJob",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "tenantId": {
+                    "type": "string"
+                  },
+                  "maxAttempts": {
+                    "type": "number"
+                  },
+                  "runAt": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "type",
+                  "data"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Jobs"
+        ]
+      }
+    },
+    "/api/v1/installation/status": {
+      "get": {
+        "operationId": "PlatformController_getInstallationStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "initialized": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "initialized"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Platform"
+        ]
+      }
+    },
+    "/api/v1/installation/initialize": {
+      "post": {
+        "operationId": "PlatformController_initialize",
+        "parameters": [
+          {
+            "name": "x-installation-secret",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "platformName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "adminName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "adminEmail": {
+                    "type": "string",
+                    "format": "email",
+                    "minLength": 1
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 128
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "platformName",
+                  "adminName",
+                  "adminEmail",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "initialized": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "platformName": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "initialized",
+                    "platformName"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Platform"
+        ]
+      }
+    },
+    "/api/v1/platform/auth/login": {
+      "post": {
+        "operationId": "PlatformController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "minLength": 1
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Platform"
+        ]
+      }
+    },
+    "/api/v1/platform/me": {
+      "get": {
+        "operationId": "PlatformController_getCurrentPlatformAdmin",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "platformBearer": []
+          }
+        ],
+        "tags": [
+          "Platform"
+        ]
+      }
+    },
+    "/api/v1/platform/tenants/{tenantId}/kyb-documents": {
+      "post": {
+        "operationId": "PlatformController_uploadTenantKybDocument",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "documentName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "document": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "documentName",
+                  "document"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "platformBearer": []
+          }
+        ],
+        "tags": [
+          "Platform"
+        ]
+      },
+      "get": {
+        "operationId": "PlatformController_listTenantKybDocuments",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "platformBearer": []
+          }
+        ],
+        "tags": [
+          "Platform"
+        ]
+      }
+    },
+    "/api/v1/platform/tenants/{tenantId}/kyb-documents/{documentId}/content": {
+      "get": {
+        "operationId": "PlatformController_downloadTenantKybDocument",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "documentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "platformBearer": []
+          }
+        ],
+        "tags": [
+          "Platform"
+        ]
+      }
+    },
+    "/api/v1/platform/tenants/{tenantId}/kyb-documents/{documentId}/review": {
+      "patch": {
+        "operationId": "PlatformController_reviewTenantKybDocument",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "documentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "ACCEPTED",
+                      "REJECTED"
+                    ],
+                    "minLength": 1
+                  },
+                  "note": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 1000
+                  }
+                },
+                "additionalProperties": true,
+                "required": [
+                  "status"
+                ],
+                "oneOf": [
+                  {
+                    "properties": {
+                      "status": {
+                        "enum": [
+                          "REJECTED"
+                        ]
+                      },
+                      "note": {
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "status",
+                      "note"
+                    ]
+                  },
+                  {
+                    "properties": {
+                      "status": {
+                        "enum": [
+                          "ACCEPTED"
+                        ]
+                      },
+                      "note": {
+                        "minLength": 0
+                      }
+                    },
+                    "required": [
+                      "status"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "platformBearer": []
+          }
+        ],
+        "tags": [
+          "Platform"
+        ]
+      }
+    },
+    "/api/v1/platform/tenants/{tenantId}/approve": {
+      "post": {
+        "operationId": "PlatformController_approveTenant",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "approved": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "approved"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "platformBearer": []
+          }
+        ],
+        "tags": [
+          "Platform"
+        ]
+      }
+    },
+    "/api/v1/platform/stats": {
+      "get": {
+        "operationId": "PlatformController_getPlatformStats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalTenants": {
+                      "type": "integer"
+                    },
+                    "activeTenants": {
+                      "type": "integer"
+                    },
+                    "totalStores": {
+                      "type": "integer"
+                    },
+                    "totalProducts": {
+                      "type": "integer"
+                    },
+                    "totalSales": {
+                      "type": "integer"
+                    },
+                    "totalRevenue": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "totalTenants",
+                    "activeTenants",
+                    "totalStores",
+                    "totalProducts",
+                    "totalSales",
+                    "totalRevenue"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Platform"
+        ]
+      }
+    },
+    "/api/v1/platform/payment-providers": {
+      "get": {
+        "operationId": "PlatformController_listPaymentProviders",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "platformBearer": []
+          }
+        ],
+        "tags": [
+          "Platform"
+        ]
+      }
+    },
+    "/api/v1/platform/payment-providers/{provider}": {
+      "get": {
+        "operationId": "PlatformController_getPaymentProvider",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "platformBearer": []
+          }
+        ],
+        "tags": [
+          "Platform"
+        ]
+      },
+      "put": {
+        "operationId": "PlatformController_upsertPaymentProvider",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "displayName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "isEnabled": {
+                    "type": "boolean"
+                  },
+                  "isSandbox": {
+                    "type": "boolean"
+                  },
+                  "apiKey": {
+                    "type": "string",
+                    "nullable": true,
+                    "minLength": 0
+                  },
+                  "secretKey": {
+                    "type": "string",
+                    "nullable": true,
+                    "minLength": 0
+                  },
+                  "publicKey": {
+                    "type": "string",
+                    "nullable": true,
+                    "minLength": 0
+                  },
+                  "accountId": {
+                    "type": "string",
+                    "nullable": true,
+                    "minLength": 0
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": true
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "platformBearer": []
+          }
+        ],
+        "tags": [
+          "Platform"
+        ]
+      }
+    },
+    "/api/v1/platform/payment-providers/{provider}/webhook": {
+      "post": {
+        "operationId": "PlatformController_handlePaymentWebhook",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Platform"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "SaaS POS API",
+    "description": "REST API for the SaaS POS platform.",
+    "version": "0.1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      },
+      "platformBearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {}
+  }
+}

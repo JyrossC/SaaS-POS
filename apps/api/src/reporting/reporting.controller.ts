@@ -1,3 +1,4 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import {
   Controller,
   Get,
@@ -14,6 +15,7 @@ import { TenantContextService } from '../tenant/tenant-context.service';
 import { EntitlementService } from '../subscription/entitlement.service';
 import { ReportingService } from './reporting.service';
 
+@ApiBearerAuth('bearer')
 @Controller('reports')
 @UseGuards(AuthGuard, PermissionGuard)
 export class ReportingController {

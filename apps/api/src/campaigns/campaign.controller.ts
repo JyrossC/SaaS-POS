@@ -1,3 +1,4 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -19,6 +20,7 @@ import { AuthGuard } from '../auth/auth.guard';
 import { RequirePermissions } from '../authorization/permission.decorator';
 import { PermissionGuard } from '../authorization/permission.guard';
 import { CampaignService, CreateCampaignInput, UpdateCampaignInput, CampaignQuery, CreateCustomerSegmentInput, UpdateCustomerSegmentInput } from './campaign.service';
+import { ApiJoiBody } from '../common/openapi/joi-body.decorator';
 import { JoiValidationPipe } from '../common/validation/joi-validation.pipe';
 import {
   createCampaignSchema,
@@ -30,6 +32,7 @@ import {
   customerSegmentIdParamSchema,
 } from '../common/validation/schemas';
 
+@ApiBearerAuth('bearer')
 @Controller('campaigns')
 @UseGuards(AuthGuard, PermissionGuard)
 export class CampaignController {
@@ -38,6 +41,7 @@ export class CampaignController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions('campaigns.create')
+  @ApiJoiBody(createCampaignSchema)
   @UsePipes(new JoiValidationPipe(createCampaignSchema))
   async createCampaign(
     @Req() request: RequestWithUser,
@@ -74,6 +78,7 @@ export class CampaignController {
 
   @Patch(':campaignId')
   @RequirePermissions('campaigns.update')
+  @ApiJoiBody(updateCampaignSchema)
   @UsePipes(new JoiValidationPipe(updateCampaignSchema))
   async updateCampaign(
     @Req() request: RequestWithUser,
@@ -116,6 +121,7 @@ export class CampaignController {
   @Post('segments')
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions('campaigns.create')
+  @ApiJoiBody(createCustomerSegmentSchema)
   @UsePipes(new JoiValidationPipe(createCustomerSegmentSchema))
   async createCustomerSegment(
     @Req() request: RequestWithUser,
@@ -151,6 +157,7 @@ export class CampaignController {
 
   @Patch('segments/:segmentId')
   @RequirePermissions('campaigns.update')
+  @ApiJoiBody(updateCustomerSegmentSchema)
   @UsePipes(new JoiValidationPipe(updateCustomerSegmentSchema))
   async updateCustomerSegment(
     @Req() request: RequestWithUser,

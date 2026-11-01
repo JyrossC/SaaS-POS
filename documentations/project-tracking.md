@@ -1,148 +1,53 @@
 # Project Tracking
 
-This file captures the implementation state for the SaaS Multi-Tenant POS Platform. It reflects the completed implementation across all eight development phases.
+This is an evidence-based project status snapshot for the SaaS Multi-Tenant POS Platform. The full-system release remains incomplete. The [production-readiness roadmap](production-readiness-roadmap.md) is the authoritative delivery matrix with scope, dependencies, accountable workstreams, acceptance criteria, and release gates.
 
-## 1. Delivery status summary
+## 1. Current status
 
-| Workstream | Status | Notes |
+| Workstream | Status | Evidence / next gate |
 |---|---|---|
-| Requirements and architecture baseline | Complete | Blueprint is documented and authoritative |
-| Developer onboarding kit | Complete | Human setup, workflow, and contribution docs are in place |
-| AI-agent instruction set | Complete | Agent skills and command guides are in place |
-| Scaffolding and conventions | Complete | API, frontend, database, and design conventions are defined |
-| Operational tracking artifacts | Complete | Tracking, traceability, baseline, features, and phases are documented |
-| Application implementation | Complete | All 8 phases implemented: auth, tenancy, authorization, subscription, products, inventory, purchasing, POS sales, cash sessions, returns, pharmacy, reporting, AI analytics |
-| Database schema and migrations | Complete | All migrations applied: identity/retail, platform-installation, pending-review, KYB documents, membership invitations, purchasing, sales, entitlement overrides, subscription plan version fields |
-| Phase 1 validation | Complete | Architecture and requirements are documented and authoritative |
+| Requirements and architecture | Partial | Blueprint exists; launch, financial, billing, offline, and pharmacy decisions remain open. |
+| Documentation and tracking | In progress | Onboarding reflects Node 24 and native PostgreSQL; an isolated Node 24 clean checkout passed through API/web HTTP smoke checks. Remote CI and dependency-audit remediation remain open. Use the roadmap for current acceptance status. |
+| Application implementation | Partial | Substantial API code exists, but complete workflows, UI coverage, and end-to-end acceptance are not established. |
+| Web/API build and quality | Passing locally / incomplete for release | Node 24 clean-copy typecheck, lint, builds, and tests pass; web bundle has a non-blocking chunk-size warning; OpenAPI covers 79 paths / 99 operations and all 40 request bodies, but only 12 operations have explicit response schemas. |
+| API automated tests | Passing locally | 18 suites and 88 tests pass against a fresh isolated `_test` database, including HTTP integration coverage; remote CI remains unverified. |
+| Web browser smoke tests | Passing locally | Six Playwright tests pass with mocked API responses; full backend-integrated business-flow browser acceptance remains outstanding. |
+| Database migrations | Verified locally / CI pending | All 16 migrations applied to a newly created disposable PostgreSQL database under Node 24; Prisma reports status up to date. CI now provisions native PostgreSQL and checks status after deployment; remote CI remains unverified. |
+| Production deployment and operations | Not verified | CI uses native PostgreSQL and application build artifacts; production deployment, monitoring, restore drills, and release rollback require evidence. |
+
+This snapshot reflects observed repository and command evidence, not a claim that every behavior has been audited. Update it when reproducible evidence changes.
 
 ## 2. Project objectives
 
-The platform is a multi-tenant SaaS commerce system supporting retail and pharmacy operations with:
+The full release target is a multi-tenant SaaS commerce system supporting retail and pharmacy operations, platform and tenant administration, subscription billing, business intelligence, AI-assisted analysis, and approved offline operation. No feature area is removed from scope to accelerate release.
 
-- tenant isolation at every data-access boundary
-- centralized subscription entitlements enforced on the backend
-- scoped RBAC and ABAC authorization
-- complete accounting of sensitive changes through audit logs
-- transactional integrity for POS and pharmacy flows
-- support for BI and AI-assisted analysis without violating tenant boundaries
+## 3. Non-negotiable implementation constraints
 
-## 3. Core implementation constraints
+1. Derive and verify tenant and store access from authenticated context; never trust request-supplied tenant identifiers.
+2. Enforce subscription entitlements and resource limits server-side and atomically.
+3. Calculate prices, taxes, and totals on the server according to approved product rules.
+4. Persist a sale, payment, stock movement, and required audit data consistently.
+5. Enforce pharmacy batch, expiry, authorization, and traceability rules.
+6. Do not fabricate operational data for dashboards or reports.
+7. Audit sensitive operations and do not expose secrets or stack traces in production errors.
+8. Offline operation must follow approved payment, stock, synchronization, and security policies.
 
-The following constraints are non-negotiable and drive every phase:
+These are requirements, not assertions that the current implementation meets them.
 
-1. Tenant data is never trusted from request payloads or route parameters.
-2. Subscription limits are enforced server-side through an entitlement layer.
-3. Prices, taxes, and totals are generated by the API, not the browser.
-4. POS sales are single-transaction business events.
-5. Pharmacy stock rules enforce expiry and FEFO safety.
-6. Empty states must work for a truly empty database.
-7. No fabricated operational business data is permitted.
-8. Sensitive actions are auditable and logged.
+## 4. Delivery sequence
 
-## 4. Workstream register
+1. **R0 — Engineering foundation:** restore reproducible build, test, lint, API docs, and migration verification.
+2. **R1 — Product decisions:** settle market, financial, billing, offline, and pharmacy rules.
+3. **R2 — Identity and administration:** complete tenant/platform administration, authorization, audit, and security workflows.
+4. **R3 — Subscription and payments:** complete plan, entitlement, invoicing, provider, settlement, retry, refund, and reconciliation lifecycles.
+5. **R4 — Retail operations:** complete catalog, inventory, purchasing, POS, cash, returns, customers, promotions, and receipts.
+6. **R5 — Pharmacy:** complete regulated batch, prescription, dispensing, return, quarantine, recall, and reporting workflows.
+7. **R6 — BI and AI:** complete verified metrics, exports, platform reporting, forecasting/replenishment, and privacy controls.
+8. **R7 — Integrations and offline:** complete background processing, notifications, payment integrations, and offline synchronization.
+9. **R8 — Production release:** prove deployment, observability, security, performance, backup/restore, rollback, and full-system acceptance.
 
-### 4.1 Documentation and governance
+Workstreams may proceed in parallel where their dependencies permit. The order does not reduce release scope.
 
-- Status: Complete
-- Source: Requirements document, developer docs, scaffolding docs, AGENTS.md
-- Deliverables:
-  - project blueprint
-  - onboarding and contribution docs
-  - AI-agent guidance
-  - module and code conventions
+## 5. Release decision
 
-### 4.2 Architecture and design baseline
-
-- Status: Complete
-- Scope:
-  - platform/domain boundaries
-  - tenancy model
-  - subscription and entitlement model
-  - module catalogue
-  - security model
-  - BI/AI scope
-
-### 4.3 Implementation baseline
-
-- Status: Complete
-- Scope:
-  - frontend stack (React, Vite, design tokens per SEC-DS-001)
-  - backend stack (NestJS, TypeScript, REST API)
-  - database strategy (PostgreSQL, tenant-scoped composite FKs)
-  - validation and security tooling (Joi pipe, Helmet, Argon2id, JWT)
-  - phase readiness checklist (all phases complete)
-
-### 4.4 Feature backlog
-
-- Status: Complete as a catalogue; all features implemented
-- Scope:
-  - platform administration (Complete)
-  - tenant administration (Complete)
-  - commerce operations (Complete)
-  - pharmacy operations (Complete)
-  - reporting and AI analysis (Complete — reporting implemented; AI is rule-based classification, not ML/forecasting)
-
-## 5. Delivery phases
-
-| Phase | Focus | Status |
-|---|---|---|
-| Phase 1 | Requirements, architecture, design system, API model | Complete |
-| Phase 2 | Application foundation | Complete |
-| Phase 3 | Identity, tenancy, and authorization | Complete (hard gate passed) |
-| Phase 4 | Subscription and entitlement engine | Complete (concurrency-safe limits enforced) |
-| Phase 5 | Core retail operations | Complete |
-| Phase 6 | Pharmacy operations | Complete |
-| Phase 7 | Business intelligence | Complete (gross profit and export not yet implemented) |
-| Phase 8 | AI analytics | Complete (rule-based classification; no forecasting or ML) |
-
-## 6. Current milestone gate
-
-All milestones are complete. The platform is fully implemented with:
-
-- tenant and store scoping model (enforced at DB and API level)
-- RBAC and ABAC permission matrix (40+ system permissions)
-- entitlement and subscription rules (concurrency-safe limit enforcement)
-- sale and inventory transaction model (atomic transactions)
-- pharmacy FEFO and expiry strategy (batch-level FEFO, expiry blocking, quarantine)
-- API validation and audit pipeline (Joi schemas, centralized audit logging)
-
-## 7. Implementation summary
-
-### Backend modules implemented
-
-| Module | Endpoints | Key Capabilities |
-|---|---|---|
-| Auth | login, register, accept-invitation | Argon2id, JWT (15m), tenant slug login, tenant registration |
-| Tenant | CRUD, membership, roles | Tenant context, store scoping, cross-tenant isolation |
-| Authorization | permission guard | Decorator-based access control |
-| Subscription | details, change-plan, renew, suspend, reactivate, invoices, payments | Concurrency-safe limits, plan lifecycle, invoice/payment recording |
-| Products | CRUD, list, search | Tenant-scoped catalogue, SKU uniqueness |
-| Inventory | list, stock-adjustments | Atomic adjustments, idempotency, negative-stock prevention |
-| Stores | CRUD, deactivate | Tenant-scoped store management |
-| Purchasing | suppliers, purchase-orders, goods-receipts | Supplier CRUD, PO creation/approval, goods receipt with inventory update |
-| Sales | create, list, get, void | Atomic sale transactions, server-side pricing, payments, void with restoration |
-| Cash Sessions | open, close, list, current | Open/close with expected vs actual balance variance |
-| Returns | create, list, get | Refunds with inventory restoration |
-| Pharmacy | drug-details, batches, dispense, quarantine, expiring | FEFO allocation, dispensing, quarantine/release |
-| Reporting | sales-summary, inventory, store-comparison | BI metrics, empty states |
-| AI | query, capabilities | Intent classification, approved analytical operations |
-| Platform | installation, tenant-kyb, payment-provider | First-run init, KYB encryption/review, payment provider config |
-
-### Frontend implementation
-
-- Design system per SEC-DS-001 (CSS tokens + TypeScript constants)
-- Reusable components: Button, Input, Card, Badge, Spinner, LoadingState, EmptyState, ErrorState, ForbiddenState
-- Layout shell: collapsible sidebar, topbar, main content
-- Auth pages: LoginPage, RegisterPage with error/loading states
-- Feature pages: ProductsPage, DashboardPage with loading/empty/error states
-- Centralized API client with auth header injection
-
-### Testing
-
-- 49 tests across 12 suites, all passing
-- Unit tests for auth, tenant context, permission guard, inventory, products, platform, KYB, entitlement
-- Cross-tenant isolation unit tests
-
-## 8. Tracking principle
-
-Every feature, module, permission, and risk item has a traceable connection back to the blueprint and a verified acceptance criterion. This keeps implementation aligned with the original business and security requirements.
+The release decision is the complete system with all scoped features. A release must remain blocked until every roadmap gate passes; individual phases or code modules must not be reported as complete based only on files or endpoints existing.

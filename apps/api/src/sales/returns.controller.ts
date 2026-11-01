@@ -1,3 +1,4 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -15,9 +16,12 @@ import { RequestWithUser } from '../auth/auth.guard';
 import { AuthGuard } from '../auth/auth.guard';
 import { RequirePermissions } from '../authorization/permission.decorator';
 import { PermissionGuard } from '../authorization/permission.guard';
+import { ApiRequestBody } from '../common/openapi/request-body.decorator';
+import { createRefundBodySchema } from '../common/openapi/request-body-schemas';
 import { TenantContextService } from '../tenant/tenant-context.service';
 import { CreateRefundInput, ReturnsService } from './returns.service';
 
+@ApiBearerAuth('bearer')
 @Controller('returns')
 @UseGuards(AuthGuard, PermissionGuard)
 export class ReturnsController {
@@ -29,6 +33,7 @@ export class ReturnsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions('sales.refund')
+  @ApiRequestBody(createRefundBodySchema)
   async createRefund(
     @Req() request: RequestWithUser,
     @Body() body: CreateRefundInput,

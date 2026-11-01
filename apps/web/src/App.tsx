@@ -50,44 +50,44 @@ function AppShell({
         />
         <main className="main-content container-max">
           <Routes location={location}>
-            <Route path="/app/" element={<Navigate to="/app/dashboard" replace />} />
-            <Route path="/app/dashboard" element={<DashboardPage />} />
-            <Route path="/app/products" element={
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="products" element={
               <RequirePermissions permissions="products.view">
                 <ProductsPage />
               </RequirePermissions>
             } />
-            <Route path="/app/sales" element={
+            <Route path="sales" element={
               <RequirePermissions permissions="sales.view">
                 <SalesPage />
               </RequirePermissions>
             } />
-            <Route path="/app/purchasing" element={
+            <Route path="purchasing" element={
               <RequirePermissions permissions="purchases.view">
                 <PurchasingPage />
               </RequirePermissions>
             } />
-            <Route path="/app/cash-sessions" element={
+            <Route path="cash-sessions" element={
               <RequirePermissions permissions="sales.view">
                 <CashSessionsPage />
               </RequirePermissions>
             } />
-            <Route path="/app/returns" element={
+            <Route path="returns" element={
               <RequirePermissions permissions="sales.refund">
                 <ReturnsPage />
               </RequirePermissions>
             } />
-            <Route path="/app/pharmacy" element={
+            <Route path="pharmacy" element={
               <RequirePermissions permissions="pharmacy.batches.view">
                 <PharmacyPage />
               </RequirePermissions>
             } />
-            <Route path="/app/reports" element={
+            <Route path="reports" element={
               <RequirePermissions permissions="reports.view">
                 <ReportsPage />
               </RequirePermissions>
             } />
-            <Route path="/app/campaigns" element={
+            <Route path="campaigns" element={
               <RequirePermissions permissions="campaigns.view">
                 <CampaignsPage />
               </RequirePermissions>

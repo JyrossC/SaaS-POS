@@ -1,5 +1,5 @@
 import { UnauthorizedException } from '@nestjs/common';
-import * as jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { PrismaService } from '../database/prisma.service';
 import { AuthService } from './auth.service';
 

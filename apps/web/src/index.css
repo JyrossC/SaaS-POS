@@ -570,22 +570,22 @@ button {
 .bg-green-50 { background-color: #f0fdf4; }
 .bg-amber-50 { background-color: #fffbeb; }
 .bg-rose-50 { background-color: #fef2f2; }
-.bg-blue-900\\/20 { background-color: rgba(30, 58, 138, 0.2); }
-.bg-green-900\\/20 { background-color: rgba(20, 83, 25, 0.2); }
-.bg-amber-900\\/20 { background-color: rgba(146, 64, 14, 0.2); }
-.bg-rose-900\\/20 { background-color: rgba(190, 18, 30, 0.2); }
-.bg-critical\\/5 { background-color: rgba(225, 29, 72, 0.05); }
-.border-critical\\/20 { border-color: rgba(225, 29, 72, 0.2); }
-.bg-warning\\/5 { background-color: rgba(217, 119, 6, 0.05); }
-.border-warning\\/20 { border-color: rgba(217, 119, 6, 0.2); }
+.bg-blue-900\/20 { background-color: rgba(30, 58, 138, 0.2); }
+.bg-green-900\/20 { background-color: rgba(20, 83, 25, 0.2); }
+.bg-amber-900\/20 { background-color: rgba(146, 64, 14, 0.2); }
+.bg-rose-900\/20 { background-color: rgba(190, 18, 30, 0.2); }
+.bg-critical\/5 { background-color: rgba(225, 29, 72, 0.05); }
+.border-critical\/20 { border-color: rgba(225, 29, 72, 0.2); }
+.bg-warning\/5 { background-color: rgba(217, 119, 6, 0.05); }
+.border-warning\/20 { border-color: rgba(217, 119, 6, 0.2); }
 .bg-inverse { background-color: var(--color-text-inverse); }
 .text-surface { color: var(--color-bg-surface); }
 
 .border-inverse { border-color: var(--color-text-inverse); }
 
-.hover\\:bg-inverse:hover { background-color: var(--color-text-inverse); }
-.hover\\:text-inverse:hover { color: var(--color-text-inverse); }
-.hover\\:text-surface:hover { color: var(--color-bg-surface); }
+.hover\:bg-inverse:hover { background-color: var(--color-text-inverse); }
+.hover\:text-inverse:hover { color: var(--color-text-inverse); }
+.hover\:text-surface:hover { color: var(--color-bg-surface); }
 
 .animate-ping {
   animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
@@ -682,41 +682,41 @@ button {
 .max-w-2xl { max-width: 42rem; }
 .max-w-md { max-width: 28rem; }
 .min-h-screen { min-height: 100vh; }
-.min-h-\\[60vh\\] { min-height: 60vh; }
-.h-\\[400px\\] { height: 400px; }
+.min-h-\[60vh\] { min-height: 60vh; }
+.h-\[400px\] { height: 400px; }
 .z-50 { z-index: 50; }
 .sticky { position: sticky; }
 .top-0 { top: 0; }
 
 @media (min-width: 640px) {
-  .sm\\:flex-col { flex-direction: column; }
-  .sm\\:flex-row { flex-direction: row; }
-  .sm\\:gap-4 { gap: var(--spacing-4); }
-  .sm\\:text-lg { font-size: 16px; line-height: 26px; }
-  .sm\\:px-4 { padding-left: var(--spacing-4); padding-right: var(--spacing-4); }
-  .sm\\:py-4 { padding-top: var(--spacing-4); padding-bottom: var(--spacing-4); }
-  .sm\\:w-48 { width: var(--spacing-48); }
-  .sm\\:col-span-2 { grid-column: span 2; }
+  .sm\:flex-col { flex-direction: column; }
+  .sm\:flex-row { flex-direction: row; }
+  .sm\:gap-4 { gap: var(--spacing-4); }
+  .sm\:text-lg { font-size: 16px; line-height: 26px; }
+  .sm\:px-4 { padding-left: var(--spacing-4); padding-right: var(--spacing-4); }
+  .sm\:py-4 { padding-top: var(--spacing-4); padding-bottom: var(--spacing-4); }
+  .sm\:w-48 { width: var(--spacing-48); }
+  .sm\:col-span-2 { grid-column: span 2; }
 }
 
 @media (min-width: 1024px) {
-  .md\\:flex-row { flex-direction: row; }
-  .md\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .md\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .md\\:col-span-2 { grid-column: span 2; }
-  .md\\:text-xl { font-size: 18px; line-height: 26px; }
-  .md\\:text-4xl { font-size: 36px; line-height: 40px; }
+  .md\:flex-row { flex-direction: row; }
+  .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .md\:col-span-2 { grid-column: span 2; }
+  .md\:text-xl { font-size: 18px; line-height: 26px; }
+  .md\:text-4xl { font-size: 36px; line-height: 40px; }
 }
 
 @media (min-width: 1440px) {
-  .lg\\:flex-row { flex-direction: row; }
-  .lg\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .lg\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .lg\\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .lg\\:col-span-2 { grid-column: span 2; }
-  .lg\\:text-5rem { font-size: 5rem; line-height: 60px; }
-  .lg\\:py-32 { padding-top: var(--spacing-16); padding-bottom: var(--spacing-16); }
-  .lg\\:py-20 { padding-top: var(--spacing-16); padding-bottom: var(--spacing-16); }
+  .lg\:flex-row { flex-direction: row; }
+  .lg\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .lg\:col-span-2 { grid-column: span 2; }
+  .lg\:text-5rem { font-size: 5rem; line-height: 60px; }
+  .lg\:py-32 { padding-top: var(--spacing-16); padding-bottom: var(--spacing-16); }
+  .lg\:py-20 { padding-top: var(--spacing-16); padding-bottom: var(--spacing-16); }
 }
 
 /* --- Dark theme overrides for utility classes --- */

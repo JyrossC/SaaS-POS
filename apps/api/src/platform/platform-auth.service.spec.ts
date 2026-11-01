@@ -1,6 +1,6 @@
 import { UnauthorizedException } from '@nestjs/common';
 import * as argon2 from 'argon2';
-import * as jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { PrismaService } from '../database/prisma.service';
 import { PlatformAuthService } from './platform-auth.service';
 

@@ -6,10 +6,9 @@ This project is expected to run as a modern web platform with a Node.js-based AP
 
 | Tool | Role |
 |---|---|
-| Node.js 18+ | Application runtime |
-| npm or pnpm | Dependency management |
-| Docker Desktop | Local Postgres and optional Redis |
-| PostgreSQL 15+ | Primary relational database |
+| Node.js 24.x | Application runtime (pinned by `.nvmrc`) |
+| npm bundled with Node.js 24 | Dependency management |
+| PostgreSQL 15+ server and client | Primary relational database and migrations |
 | Prisma | Schema management and migrations |
 | NestJS CLI | API scaffolding and code generation |
 | Vite | Frontend dev server and build system |
@@ -17,8 +16,8 @@ This project is expected to run as a modern web platform with a Node.js-based AP
 
 ## Recommended developer tooling
 
-- VS Code with ESLint, Prettier, Prisma, GitLens, Docker, and REST clients
-- Swagger UI for API exploration
+- VS Code with ESLint, Prettier, Prisma, GitLens, and REST clients
+- Swagger UI for API exploration (`http://localhost:3000/api/v1/docs` in development; all 40 request bodies are documented, while explicit response schemas cover 12 operations so far)
 - Playwright or Cypress for end-to-end testing
 - Jest or Vitest for unit and integration tests
 - Grafana or a basic log viewer for monitoring
@@ -27,7 +26,7 @@ This project is expected to run as a modern web platform with a Node.js-based AP
 
 ### Database
 
-- `docker compose up -d`
+- Install and start PostgreSQL as a local operating-system service.
 - `npm run migrate:deploy`
 - `npm run prisma:generate`
 
@@ -35,15 +34,15 @@ This project is expected to run as a modern web platform with a Node.js-based AP
 
 - `npm run dev:api`
 - `npm run build:api`
-- `npm run test:api`
+- `npm --workspace apps/api run test`
 
 ### Web
 
 - `npm run dev:web`
 - `npm run build:web`
-- `npm run test:web`
+- `npm --workspace apps/web run test`
 
-### Quality gates
+### Available checks
 
 - `npm run lint`
 - `npm run typecheck`
@@ -51,6 +50,8 @@ This project is expected to run as a modern web platform with a Node.js-based AP
 - `npm run test:isolation`
 - `npm run test:concurrency`
 - `npm run test:pharmacy`
+
+The configured web lint and browser smoke tests and the API Jest suite pass locally. Current release blockers are tracked in the [production-readiness roadmap](../../production-readiness-roadmap.md).
 
 ## Operational tools
 

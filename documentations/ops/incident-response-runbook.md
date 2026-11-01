@@ -15,14 +15,14 @@ This runbook defines procedures for deploying, monitoring, restoring, investigat
 
 ### Deploy steps
 1. Run `npm run migrate:deploy` to apply Prisma migrations
-2. Deploy API container with production environment variables
-3. Deploy web container
+2. Deploy the API release artifact with production environment variables to the selected hosting platform
+3. Deploy the web release artifact to the selected hosting platform
 4. Verify health endpoint: `GET /health` returns `{"status": "ok"}`
 5. Smoke test: login, create sale, view dashboard
 
 ### Rollback
-1. Revert API container to previous image tag
-2. Revert web container to previous image tag
+1. Redeploy the previous API release artifact
+2. Redeploy the previous web release artifact
 3. Database migrations are forward-only; do not roll back migrations manually
 4. Verify health endpoint and smoke tests
 
@@ -30,7 +30,7 @@ This runbook defines procedures for deploying, monitoring, restoring, investigat
 
 ### Health checks
 - `GET /health` - API liveness and database connectivity
-- Docker healthchecks on postgres, redis, api, web containers
+- Hosting-platform health checks for the API, web application, and database
 
 ### Logs
 - All API logs are structured JSON via `LoggingService`
@@ -47,13 +47,15 @@ This runbook defines procedures for deploying, monitoring, restoring, investigat
 
 ### Database backup
 ```bash
-docker exec saas-pos-postgres pg_dump -U postgres saas_pos > backup_$(date +%F).sql
+pg_dump "$DATABASE_URL" --format=custom --file="backup_$(date +%F).dump"
 ```
 
 ### Database restore
 ```bash
-docker exec -i saas-pos-postgres psql -U postgres -d saas_pos < backup_$(date +%F).sql
+pg_restore --clean --if-exists --dbname="$DATABASE_URL" "backup_$(date +%F).dump"
 ```
+
+Run restore only against the explicitly verified recovery target, never the active production database.
 
 ### Backup schedule
 - Daily automated backup at 02:00 UTC
@@ -63,12 +65,11 @@ docker exec -i saas-pos-postgres psql -U postgres -d saas_pos < backup_$(date +%
 ## 4. Incident Response
 
 ### P1: Complete outage (API unreachable)
-1. Check Docker container status: `docker ps`
-2. Check API logs: `docker logs saas-pos-api`
-3. Check database health: `docker exec saas-pos-postgres pg_isready`
-4. If database is down, restart postgres container
-5. If API is down, restart api container
-6. If neither helps, roll back to previous image
+1. Check application and database status in the selected hosting platform's service dashboard
+2. Review API logs in the configured log aggregation service
+3. Check database connectivity with `pg_isready -d "$DATABASE_URL"`
+4. If the database or API is unavailable, follow the hosting provider's recovery procedure
+5. If the outage persists, redeploy the previous release artifacts
 
 ### P2: Data integrity issue (corrupt inventory, wrong sales)
 1. Take immediate database backup

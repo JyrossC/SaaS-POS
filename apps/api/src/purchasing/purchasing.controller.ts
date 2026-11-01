@@ -1,3 +1,4 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -18,6 +19,13 @@ import { RequirePermissions } from '../authorization/permission.decorator';
 import { PermissionGuard } from '../authorization/permission.guard';
 import { TenantContextService } from '../tenant/tenant-context.service';
 import { EntitlementService } from '../subscription/entitlement.service';
+import { ApiRequestBody } from '../common/openapi/request-body.decorator';
+import {
+  createPurchaseOrderBodySchema,
+  createSupplierBodySchema,
+  receiveGoodsBodySchema,
+  updateSupplierBodySchema,
+} from '../common/openapi/request-body-schemas';
 import { JoiValidationPipe } from '../common/validation/joi-validation.pipe';
 import {
   paginationSchema,
@@ -28,6 +36,7 @@ import {
 } from '../common/validation/schemas';
 import { CreatePurchaseOrderInput, CreateSupplierInput, PurchasingService, ReceiveGoodsInput, UpdateSupplierInput } from './purchasing.service';
 
+@ApiBearerAuth('bearer')
 @Controller('purchasing')
 @UseGuards(AuthGuard, PermissionGuard)
 export class PurchasingController {
@@ -42,6 +51,7 @@ export class PurchasingController {
   @Post('suppliers')
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions('purchases.create')
+  @ApiRequestBody(createSupplierBodySchema)
   async createSupplier(
     @Req() request: RequestWithUser,
     @Body() body: CreateSupplierInput,
@@ -97,6 +107,7 @@ export class PurchasingController {
   @Post('suppliers/:supplierId')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('purchases.create')
+  @ApiRequestBody(updateSupplierBodySchema)
   async updateSupplier(
     @Req() request: RequestWithUser,
     @Param('supplierId') supplierId: string,
@@ -114,6 +125,7 @@ export class PurchasingController {
   @Post('purchase-orders')
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions('purchases.create')
+  @ApiRequestBody(createPurchaseOrderBodySchema)
   async createPurchaseOrder(
     @Req() request: RequestWithUser,
     @Body() body: CreatePurchaseOrderInput,
@@ -188,6 +200,7 @@ export class PurchasingController {
   @Post('goods-receipts')
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions('purchases.create')
+  @ApiRequestBody(receiveGoodsBodySchema)
   async receiveGoods(
     @Req() request: RequestWithUser,
     @Body() body: ReceiveGoodsInput,

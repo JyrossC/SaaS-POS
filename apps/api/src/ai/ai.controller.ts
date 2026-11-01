@@ -1,3 +1,4 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -13,9 +14,17 @@ import { RequestWithUser } from '../auth/auth.guard';
 import { AuthGuard } from '../auth/auth.guard';
 import { RequirePermissions } from '../authorization/permission.decorator';
 import { PermissionGuard } from '../authorization/permission.guard';
+import { ApiRequestBody } from '../common/openapi/request-body.decorator';
+import { aiQueryBodySchema } from '../common/openapi/request-body-schemas';
+import { ApiResponseSchema } from '../common/openapi/response-schema.decorator';
+import {
+  aiCapabilitiesResponseSchema,
+  aiQueryResponseSchema,
+} from '../common/openapi/response-schemas';
 import { TenantContextService } from '../tenant/tenant-context.service';
 import { AIQueryRequest, AIService } from './ai.service';
 
+@ApiBearerAuth('bearer')
 @Controller('ai')
 @UseGuards(AuthGuard, PermissionGuard)
 export class AIController {
@@ -27,6 +36,8 @@ export class AIController {
   @Post('query')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('reports.view')
+  @ApiRequestBody(aiQueryBodySchema)
+  @ApiResponseSchema(HttpStatus.OK, aiQueryResponseSchema)
   async query(
     @Req() request: RequestWithUser,
     @Body() body: AIQueryRequest,
@@ -39,6 +50,7 @@ export class AIController {
 
   @Get('capabilities')
   @RequirePermissions('reports.view')
+  @ApiResponseSchema(HttpStatus.OK, aiCapabilitiesResponseSchema)
   async getCapabilities() {
     return {
       supportedQueries: [

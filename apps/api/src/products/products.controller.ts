@@ -1,3 +1,4 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -14,6 +15,7 @@ import { RequestWithUser } from '../auth/auth.guard';
 import { AuthGuard } from '../auth/auth.guard';
 import { RequirePermissions } from '../authorization/permission.decorator';
 import { PermissionGuard } from '../authorization/permission.guard';
+import { ApiJoiBody } from '../common/openapi/joi-body.decorator';
 import { JoiValidationPipe } from '../common/validation/joi-validation.pipe';
 import {
   createProductSchema,
@@ -23,6 +25,7 @@ import {
 import { EntitlementService } from '../subscription/entitlement.service';
 import { CreateProductInput, ListProductsInput, ProductsService } from './products.service';
 
+@ApiBearerAuth('bearer')
 @Controller('products')
 @UseGuards(AuthGuard, PermissionGuard)
 export class ProductsController {
@@ -49,6 +52,7 @@ export class ProductsController {
 
   @Post()
   @RequirePermissions('products.create')
+  @ApiJoiBody(createProductSchema)
   @UsePipes(new JoiValidationPipe(createProductSchema))
   async create(
     @Req() request: RequestWithUser,

@@ -77,7 +77,7 @@ Feature available =
 - Use `Read` before `Edit` on any existing file.
 - Use `Glob`/`Grep` for search; prefer the `task` (explore subagent) for open-ended exploration.
 - Run multiple independent tool calls in a single message when possible.
-- Use `bash` only for terminal operations (git, npm, docker, etc.), never for file reads/writes/edits.
+- Use `bash` only for terminal operations (git, npm, etc.), never for file reads/writes/edits.
 - Do not use `git` mutating commands (add, commit, merge, checkout, reset, stash) unless the user explicitly asks.
 - Do not commit, amend, push, or create PRs unless explicitly requested.
 

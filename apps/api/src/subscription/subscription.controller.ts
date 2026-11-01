@@ -1,3 +1,4 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -18,10 +19,18 @@ import { RequirePermissions } from '../authorization/permission.decorator';
 import { PermissionGuard } from '../authorization/permission.guard';
 import { TenantContextService } from '../tenant/tenant-context.service';
 import { EntitlementService } from '../subscription/entitlement.service';
+import { ApiJoiBody } from '../common/openapi/joi-body.decorator';
+import { ApiRequestBody } from '../common/openapi/request-body.decorator';
+import {
+  changePlanBodySchema,
+  reasonBodySchema,
+  renewSubscriptionBodySchema,
+} from '../common/openapi/request-body-schemas';
 import { JoiValidationPipe } from '../common/validation/joi-validation.pipe';
 import { paginationSchema, invoiceIdParamSchema, recordPaymentBodySchema } from '../common/validation/schemas';
 import { ChangePlanInput, RenewSubscriptionInput, SubscriptionService } from './subscription.service';
 
+@ApiBearerAuth('bearer')
 @Controller('subscription')
 @UseGuards(AuthGuard, PermissionGuard)
 export class SubscriptionController {
@@ -44,6 +53,7 @@ export class SubscriptionController {
   @Post('change-plan')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('subscription.manage')
+  @ApiRequestBody(changePlanBodySchema)
   async changePlan(
     @Req() request: RequestWithUser,
     @Body() body: ChangePlanInput,
@@ -59,6 +69,7 @@ export class SubscriptionController {
   @Post('renew')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('subscription.manage')
+  @ApiRequestBody(renewSubscriptionBodySchema)
   async renew(
     @Req() request: RequestWithUser,
     @Body() body: RenewSubscriptionInput,
@@ -74,6 +85,7 @@ export class SubscriptionController {
   @Post('suspend')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('subscription.manage')
+  @ApiRequestBody(reasonBodySchema, false)
   async suspend(
     @Req() request: RequestWithUser,
     @Body('reason') reason?: string,
@@ -118,6 +130,7 @@ export class SubscriptionController {
   @Post('invoices/:invoiceId/pay')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('subscription.manage')
+  @ApiJoiBody(recordPaymentBodySchema)
   @UsePipes(new JoiValidationPipe(invoiceIdParamSchema))
   @UsePipes(new JoiValidationPipe(recordPaymentBodySchema))
   async recordPayment(

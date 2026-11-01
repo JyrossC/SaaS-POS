@@ -1,3 +1,4 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import {
   Body,
   BadRequestException,
@@ -15,6 +16,7 @@ import { RequestWithUser } from '../auth/auth.guard';
 import { AuthGuard } from '../auth/auth.guard';
 import { RequirePermissions } from '../authorization/permission.decorator';
 import { PermissionGuard } from '../authorization/permission.guard';
+import { ApiJoiBody } from '../common/openapi/joi-body.decorator';
 import { JoiValidationPipe } from '../common/validation/joi-validation.pipe';
 import {
   adjustStockSchema,
@@ -24,6 +26,7 @@ import { TenantContextService } from '../tenant/tenant-context.service';
 import { EntitlementService } from '../subscription/entitlement.service';
 import { AdjustStockInput, InventoryService } from './inventory.service';
 
+@ApiBearerAuth('bearer')
 @Controller('stores/:storeId/inventory')
 @UseGuards(AuthGuard, PermissionGuard)
 export class InventoryController {
@@ -51,6 +54,7 @@ export class InventoryController {
 
   @Post('stock-adjustments')
   @RequirePermissions('inventory.adjust')
+  @ApiJoiBody(adjustStockSchema)
   @UsePipes(new JoiValidationPipe(adjustStockSchema))
   async adjust(
     @Req() request: RequestWithUser,

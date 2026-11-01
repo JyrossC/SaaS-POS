@@ -1620,9 +1620,9 @@ Audit logs should be protected against unauthorized modification.
 
 # 16. Offline Operation and Transaction Reliability
 
-You did not explicitly require offline support in this request, so I would not make it a mandatory first-release feature without further confirmation.
+The confirmed full-system release scope includes offline POS operation. The team may implement online workflows first to control dependencies, but offline support is required before the full-system release; it is not deferred out of scope.
 
-However, a POS platform may need to operate during network interruptions. If that is a future requirement, plan for it now because offline sales significantly affect transaction design.
+Offline operation has policy decisions that still require product approval, including permitted payment methods, offline stock/oversell rules, device trust, synchronization conflicts, and unsupported operations. Record and test these policies before treating offline acceptance criteria as final.
 
 Offline support is not simply caching the React application.
 
@@ -1640,7 +1640,7 @@ It requires:
 
 For pharmacies, offline operation must also respect expiry, dispensing, and any other restrictions that cannot safely be bypassed.
 
-I would build a reliable online-first POS first, then implement offline capabilities as a separate, carefully tested milestone.
+Build and verify reliable online POS workflows first, then implement offline capabilities as a separate, carefully tested milestone in the same full-system release.
 
 ---
 
@@ -2073,7 +2073,7 @@ If tenant isolation, authorization, subscriptions, and transaction integrity are
 
 ## Let's establish the project requirements before implementation
 
-I need you to make five decisions so the architecture can be refined into an executable development plan.
+The choices below are retained as the original planning questionnaire. The confirmed-decision record supersedes answered choices; the full-system release includes every scoped feature, including offline POS. Remaining business and regulatory decisions are listed in the [production-readiness roadmap](production-readiness-roadmap.md).
 
 **1. Deployment target**
 
@@ -2101,20 +2101,22 @@ Which environment are you targeting?
 - **B.** Online POS with a planned offline mode.
 - **C.** Offline-capable POS from the first release.
 
+**Confirmed full-system release decision: C.** Exact offline policies remain subject to product approval.
+
 **5. Development approach**
 
 - **A.** Build the complete requirements document, database ERD, architecture, permission matrix, and development plan before coding.
 - **B.** Design the architecture, then build and test one module at a time.
 - **C.** Use a combined approach: establish the complete architecture and requirements first, then implement incrementally with tests and a persistent progress tracker.
 
-**My recommendation is**
-1. Confirmed Project Decisions
+### Confirmed Project Decisions
+
 | Area | Confirmed decision | Implementation implication |
 |---|---|---|
 | Development environment | Local development, followed by cloud deployment | Local PostgreSQL, React, and NestJS; production-ready configuration from the beginning |
 | Authentication | Email and password, with optional MFA | Secure authentication, MFA enrollment, recovery, session management |
 | Subscription billing | Automated online subscriptions and recurring payments | Payment provider integration, billing lifecycle, webhooks, reconciliation |
-| POS connectivity | Online initially, with offline mode planned | Online-first architecture with future synchronization support |
+| POS connectivity | Offline-capable full-system release | Online-first implementation order is acceptable; offline capability remains a release requirement |
 | Planning approach | Complete documentation before coding | Requirements, ERD, architecture, authorization matrix, design system, implementation plan |
 | Implementation approach | Incremental development | Module-by-module delivery, automated tests, acceptance criteria |
 | Progress management | Persistent project tracker | Track implementation, testing, blockers, and verified completion |
@@ -2235,8 +2237,8 @@ Do not assume that every payment provider supports true recurring billing for ev
 A payment provider might support recurring card charges but require a different workflow for mobile money.
 
 We should select the provider only after confirming the intended commercial model and supported payment methods.
-3.3 Planned offline POS
-We'll build the initial POS as an online system while avoiding architectural choices that would make offline support unnecessarily difficult later.
+3.3 Offline POS (required for the full-system release)
+We'll build and validate online POS workflows first while avoiding architectural choices that would make the required offline capability unnecessarily difficult.
 
 The initial design should anticipate:
 - Unique transaction identifiers.
@@ -2246,11 +2248,11 @@ The initial design should anticipate:
 - Conflict-aware inventory operations.
 - Synchronization metadata where appropriate.
 - Clear handling of uncertain payment outcomes.
-When offline support is introduced, we will need additional capabilities, including local persistence, queued transactions, synchronization, conflict resolution, and rules governing transactions that cannot be safely completed offline.
+Offline capability requires local persistence, queued transactions, synchronization, conflict resolution, and rules governing transactions that cannot be safely completed offline.
 
 For pharmacies, offline functionality must never bypass critical restrictions concerning expired products or other regulated workflows.
 
-Offline support will be a planned milestone, not a checkbox we claim to have completed merely because the interface loads without internet access.
+Offline support is a required milestone before full-system release, not a checkbox we claim to have completed merely because the interface loads without internet access.
 4. Documentation We Must Complete Before Coding
 I recommend creating the following project documents.
 ID	Document	Purpose

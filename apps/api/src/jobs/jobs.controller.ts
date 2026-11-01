@@ -1,3 +1,4 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -12,8 +13,14 @@ import { RequestWithUser } from '../auth/auth.guard';
 import { AuthGuard } from '../auth/auth.guard';
 import { RequirePermissions } from '../authorization/permission.decorator';
 import { PermissionGuard } from '../authorization/permission.guard';
+import { ApiRequestBody } from '../common/openapi/request-body.decorator';
+import {
+  enqueueJobBodySchema,
+  processDueJobsBodySchema,
+} from '../common/openapi/request-body-schemas';
 import { JobQueueService, JobProcessor, EnqueueJobInput } from './job-processor';
 
+@ApiBearerAuth('bearer')
 @Controller('jobs')
 @UseGuards(AuthGuard, PermissionGuard)
 export class JobsController {
@@ -53,6 +60,7 @@ export class JobsController {
 
   @Post('process-due')
   @RequirePermissions('jobs.manage')
+  @ApiRequestBody(processDueJobsBodySchema, false)
   async processDueJobs(
     @Req() request: RequestWithUser,
     @Body() body?: { limit?: number },
@@ -64,6 +72,7 @@ export class JobsController {
 
   @Post('enqueue')
   @RequirePermissions('jobs.manage')
+  @ApiRequestBody(enqueueJobBodySchema)
   async enqueueJob(
     @Req() request: RequestWithUser,
     @Body() body: EnqueueJobInput,

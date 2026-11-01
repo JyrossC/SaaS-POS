@@ -1,10 +1,10 @@
 # Development Phases
 
-This document translates the blueprint's roadmap into an implementation sequence for the project team and the AI coding agent. All eight phases are complete.
+This document describes the implementation sequence. The phases are **not complete**: the repository contains partial implementations, unresolved product decisions, and failing or missing verification gates. See the [full-system production-readiness roadmap](production-readiness-roadmap.md) for detailed statuses, dependencies, and acceptance evidence. Phase exit criteria below are targets, not claims that they have passed.
 
 ## Phase 1: Requirements and architecture
 
-### Status: Complete
+### Status: Partial — business and regulatory decisions remain open
 
 ### Goal
 
@@ -29,7 +29,7 @@ Lock the business rules, system boundaries, and technical direction before imple
 
 ## Phase 2: Application foundation
 
-### Status: Complete
+### Status: Partial — web lint/test, API documentation, and full CI gates remain
 
 ### Goal
 
@@ -53,7 +53,7 @@ Create the runtime foundation and shared tooling.
 
 ## Phase 3: Identity, tenancy, and authorization
 
-### Status: Complete
+### Status: Partial — end-to-end identity, admin, and security acceptance remains
 
 ### Goal
 
@@ -75,7 +75,7 @@ Create secure identity and authorization foundations.
 
 ## Phase 4: Subscription and entitlement engine
 
-### Status: Complete
+### Status: Partial — complete billing lifecycle and concurrency acceptance remain
 
 ### Goal
 
@@ -96,7 +96,7 @@ Add package and module gating to the platform.
 
 ## Phase 5: Core retail operations
 
-### Status: Complete
+### Status: Partial — several commerce workflows and release evidence remain
 
 ### Goal
 
@@ -120,7 +120,7 @@ Build the operational retail functions.
 
 ## Phase 6: Pharmacy operations
 
-### Status: Complete
+### Status: Partial — regulatory acceptance, UI, and passing workflow tests remain
 
 ### Goal
 
@@ -142,7 +142,7 @@ Implement regulated pharmacy workflows and inventory control.
 
 ## Phase 7: Business intelligence
 
-### Status: Complete
+### Status: Partial — exports, margin, metric validation, and UI acceptance remain
 
 ### Goal
 
@@ -167,7 +167,7 @@ Implement reports and operational analytics.
 
 ## Phase 8: AI analytics
 
-### Status: Complete (rule-based implementation)
+### Status: Partial — rule-based analytics exists; the full approved AI scope remains
 
 ### Goal
 
@@ -194,7 +194,7 @@ Introduce approved analytical support with strict controls.
 
 ## Cross-phase governance
 
-Each phase satisfied:
+Each phase must demonstrate:
 
 - tenant isolation validation
 - security and audit requirements
@@ -204,4 +204,4 @@ Each phase satisfied:
 
 ## Implementation ordering rule
 
-All phases completed in order: foundation -> identity -> entitlement -> retail -> pharmacy -> BI -> AI. The project is at full implementation status.
+Implementation should follow the dependency order: foundation -> decisions and identity -> entitlement -> retail -> pharmacy -> BI/AI -> offline -> production operations. No phase is considered complete until its acceptance criteria are evidenced; the project is not at full implementation status.

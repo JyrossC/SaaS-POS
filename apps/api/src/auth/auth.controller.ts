@@ -1,3 +1,4 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -11,6 +12,13 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { AuthGuard, RequestWithUser } from './auth.guard';
+import { ApiJoiBody } from '../common/openapi/joi-body.decorator';
+import { ApiResponseSchema } from '../common/openapi/response-schema.decorator';
+import {
+  authenticationResponseSchema,
+  forgotPasswordResponseSchema,
+  logoutResponseSchema,
+} from '../common/openapi/response-schemas';
 import { JoiValidationPipe } from '../common/validation/joi-validation.pipe';
 import {
   acceptInvitationSchema,
@@ -37,6 +45,7 @@ export class AuthController {
   ) {}
 
   @Get('me')
+  @ApiBearerAuth('bearer')
   @UseGuards(AuthGuard)
   getCurrentUser(@Req() request: RequestWithUser) {
     if (!request.user) {
@@ -47,6 +56,8 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @ApiJoiBody(loginSchema)
+  @ApiResponseSchema(HttpStatus.OK, authenticationResponseSchema)
   @UsePipes(new JoiValidationPipe(loginSchema))
   async login(@Body() body: LoginRequest, @Req() request: RequestWithUser) {
     try {
@@ -62,6 +73,8 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @ApiJoiBody(registerTenantSchema)
+  @ApiResponseSchema(HttpStatus.CREATED, authenticationResponseSchema)
   @UsePipes(new JoiValidationPipe(registerTenantSchema))
   async register(@Body() body: RegisterTenantRequest) {
     return this.authService.registerTenant(body);
@@ -69,6 +82,8 @@ export class AuthController {
 
   @Post('invitations/accept')
   @HttpCode(HttpStatus.OK)
+  @ApiJoiBody(acceptInvitationSchema)
+  @ApiResponseSchema(HttpStatus.OK, authenticationResponseSchema)
   @UsePipes(new JoiValidationPipe(acceptInvitationSchema))
   async acceptInvitation(@Body() body: AcceptInvitationRequest) {
     return this.authService.acceptInvitation(body);
@@ -76,6 +91,8 @@ export class AuthController {
 
   @Post('password/forgot')
   @HttpCode(HttpStatus.OK)
+  @ApiJoiBody(forgotPasswordSchema)
+  @ApiResponseSchema(HttpStatus.OK, forgotPasswordResponseSchema)
   @UsePipes(new JoiValidationPipe(forgotPasswordSchema))
   async forgotPassword(@Body() body: ForgotPasswordRequest) {
     return this.authService.forgotPassword(body);
@@ -83,6 +100,7 @@ export class AuthController {
 
   @Post('password/reset')
   @HttpCode(HttpStatus.OK)
+  @ApiJoiBody(resetPasswordSchema)
   @UsePipes(new JoiValidationPipe(resetPasswordSchema))
   async resetPassword(@Body() body: ResetPasswordRequest) {
     return this.authService.resetPassword(body);
@@ -90,6 +108,8 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('bearer')
+  @ApiResponseSchema(HttpStatus.OK, logoutResponseSchema)
   @UseGuards(AuthGuard)
   async logout(@Req() request: RequestWithUser) {
     if (!request.user) {

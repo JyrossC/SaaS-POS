@@ -1,3 +1,4 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import {
   Controller,
   Get,
@@ -11,6 +12,7 @@ import { RequirePermissions } from '../authorization/permission.decorator';
 import { PermissionGuard } from '../authorization/permission.guard';
 import { EntitlementService } from './entitlement.service';
 
+@ApiBearerAuth('bearer')
 @Controller('subscription')
 @UseGuards(AuthGuard, PermissionGuard)
 export class EntitlementController {

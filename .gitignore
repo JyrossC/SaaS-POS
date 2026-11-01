@@ -6,6 +6,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+!.env.test.example
 apps/web/.env
 apps/api/.env
 
@@ -15,6 +16,8 @@ dist/
 build/
 coverage/
 *.tsbuildinfo
+apps/web/playwright-report/
+apps/web/test-results/
 
 # Logs
 logs/

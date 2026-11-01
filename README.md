@@ -4,17 +4,17 @@ A multi-tenant commerce management platform serving **retail shops** and **pharm
 
 ## What this repository contains
 
-This repository contains the platform blueprint, developer documentation, and a fully implemented monorepo. The implementation covers all eight development phases: identity/tenancy/authorization, subscription/entitlement engine, core retail operations (products, inventory, POS sales, purchasing, cash sessions, returns/refunds), pharmacy operations (batches, expiry/FEFO, prescriptions, dispensing, quarantine), business intelligence/reporting, and AI analytics. The NestJS API includes all modules, the React frontend includes the design system, layout shell, auth pages, and feature pages, and PostgreSQL migrations are applied and validated.
+This repository contains the platform blueprint, developer documentation, and a partially implemented monorepo. Backend modules and frontend feature scaffolding exist, but the complete workflows and release gates are not yet verified; the project is not production-ready. See the [full-system production-readiness roadmap](documentations/production-readiness-roadmap.md) for the evidence-based status, dependencies, acceptance criteria, unresolved decisions, and release gates.
 
-- The authoritative architecture and design blueprint in [`documentations/SaaS-Multi-Tenant-POS-Platform-Requirement.md`](<C:/Personal/Current Project/SaaS POS/documentations/SaaS-Multi-Tenant-POS-Platform-Requirement.md>).
-- A developer onboarding kit in [`documentations/docs/developer/`](<C:/Personal/Current Project/SaaS POS/documentations/docs/developer/>).
-- An AI-agent instruction set in [`documentations/AGENTS.md`](<C:/Personal/Current Project/SaaS POS/documentations/AGENTS.md>) plus the root-level skill command folders at [`.kilo/`](<C:/Personal/Current Project/SaaS POS/.kilo/>).
-- A project scaffolding guide in [`documentations/docs/scaffolding/`](<C:/Personal/Current Project/SaaS POS/documentations/docs/scaffolding/>).
-- MCP and development tooling documentation in [`.kilo/mcp/`](<C:/Personal/Current Project/SaaS POS/.kilo/mcp/>) and [`documentations/docs/devtools/`](<C:/Personal/Current Project/SaaS POS/documentations/docs/devtools/>).
+- The authoritative architecture and design blueprint in [the requirements document](documentations/SaaS-Multi-Tenant-POS-Platform-Requirement.md).
+- A developer onboarding kit in [the developer documentation](documentations/docs/developer/).
+- An AI-agent instruction set in [documentations/AGENTS.md](documentations/AGENTS.md) plus the root-level skill command folders in [`.kilo/`](.kilo/).
+- A project scaffolding guide in [the scaffolding documentation](documentations/docs/scaffolding/).
+- MCP and development tooling documentation in [`.kilo/mcp/`](.kilo/mcp/) and [documentations/docs/devtools/](documentations/docs/devtools/).
 
 ## System architecture at a glance
 
-| Layer | Responsibility | Implemented Modules |
+| Layer | Responsibility | Code areas present (not release-certified) |
 |---|---|---|
 | Platform Management | SaaS administration, tenant management, subscriptions, billing, package configuration, platform analytics | Platform module, subscription lifecycle, KYB review, payment providers |
 | Tenant Management | Business configuration, staff, roles, permissions, stores, operational settings | Tenant module, stores module, membership/roles |
@@ -40,6 +40,7 @@ documentations/
 ├── AGENTS.md                                    <- AI-agent instruction set
 ├── SaaS-Multi-Tenant-POS-Platform-Requirement.md <- Authoritative blueprint
 ├── project-tracking.md                           <- Project delivery tracker
+├── production-readiness-roadmap.md                <- Full-scope delivery matrix and release gates
 ├── traceability.csv                             <- Requirement traceability matrix
 ├── implementation-baseline.md                   <- Implementation baseline
 ├── app-features.md                              <- Platform feature catalogue
@@ -58,9 +59,9 @@ documentations/
 
 ## Quick orientation
 
-- **Humans starting out** → [`documentations/docs/developer/onboarding.md`](<C:/Personal/Current Project/SaaS POS/documentations/docs/developer/onboarding.md>)
-- **AI agents working on this codebase** → [`documentations/AGENTS.md`](<C:/Personal/Current Project/SaaS POS/documentations/AGENTS.md>), then [`.kilo/agent/`](<C:/Personal/Current Project/SaaS POS/.kilo/agent/>)
-- **Want to know how a module should be structured** → [`documentations/docs/scaffolding/overview.md`](<C:/Personal/Current Project/SaaS POS/documentations/docs/scaffolding/overview.md>)
+- **Humans starting out** → [developer onboarding](documentations/docs/developer/onboarding.md)
+- **AI agents working on this codebase** → [documentations/AGENTS.md](documentations/AGENTS.md), then [`.kilo/agent/`](.kilo/agent/)
+- **Want to know how a module should be structured** → [scaffolding overview](documentations/docs/scaffolding/overview.md)
 
 ## Core principles (non-negotiable)
 
@@ -78,40 +79,29 @@ documentations/
 
 **Frontend:** React.js, TypeScript, Vite, React Router, CSS variables for design tokens (per SEC-DS-001), semantic component library (Button, Input, Card, Badge, LoadingState, EmptyState, ErrorState, ForbiddenState).
 
-**Backend:** NestJS, TypeScript, REST API, PostgreSQL, Joi validation, Helmet, Argon2id, JWT/secure sessions, OpenAPI/Swagger, structured logging, background job queue.
+**Backend:** NestJS, TypeScript, REST API, PostgreSQL, Joi validation, Helmet, Argon2id, JWT, structured logging, and job-processing foundations. OpenAPI route generation and development Swagger UI are available; request/response schemas and complete session hardening remain unfinished.
 
-**Infrastructure:** CI/CD pipeline (GitHub Actions), automated database migrations, background job worker, Docker Compose for local PostgreSQL.
+**Infrastructure:** Node.js 24, GitHub Actions CI, a locally installed PostgreSQL server, Prisma migrations, and background-job foundations. A production deployment pipeline is not established.
 
-## Implementation status (all phases complete)
+## Implementation status
 
-| Phase | Focus | Status |
+The full-system release scope is not complete. This phase summary supersedes historical completion claims; detailed evidence and acceptance criteria are tracked in the [production-readiness roadmap](documentations/production-readiness-roadmap.md).
+
+| Phase | Focus | Current status |
 |---|---|---|
-| 1 | Requirements and architecture | Complete |
-| 2 | Application foundation | Complete |
-| 3 | Identity, tenancy, and authorization | Complete |
-| 4 | Subscription and entitlement engine | Complete |
-| 5 | Core retail operations | Complete |
-| 6 | Pharmacy modules | Complete |
-| 7 | Business intelligence and reporting | Complete |
-| 8 | AI analytics | Complete |
+| 1 | Requirements and architecture | Blueprint exists; key product and regulatory decisions remain open |
+| 2 | Application foundation | Partial; API response schemas, backend-integrated end-to-end coverage, and remote CI verification remain |
+| 3 | Identity, tenancy, and authorization | Partial; workflows, admin UI, and end-to-end security evidence remain |
+| 4 | Subscription and entitlement engine | Partial; complete payment lifecycle and concurrency acceptance remain |
+| 5 | Core retail operations | Partial; several workflows/UI surfaces and financial rules remain |
+| 6 | Pharmacy modules | Partial; regulatory decisions, UI, and passing workflow tests remain |
+| 7 | Business intelligence and reporting | Partial; metrics, exports, margin, platform BI, and UI verification remain |
+| 8 | AI analytics | Partial; forecasting/replenishment and full evaluation/privacy evidence remain |
 
-### Implemented modules
+### Existing implementation
 
-- **Auth:** Login (tenant slug + email + password), tenant registration with plan selection, invitation acceptance, platform admin auth
-- **Tenancy:** Tenant context resolution, store CRUD, membership/role/permission scoping, cross-tenant isolation
-- **Authorization:** Decorator-based `RequirePermissions`, `PermissionGuard`, 40+ system permissions
-- **Subscription:** Plan lifecycle (change, renew, suspend, reactivate), entitlement checks, invoice/payment recording, concurrency-safe limit enforcement
-- **Products:** Tenant-scoped catalogue CRUD, SKU uniqueness, paginated search
-- **Inventory:** Atomic stock adjustments, idempotency keys, negative-stock prevention, audit logging
-- **Purchasing:** Suppliers, purchase orders, goods receipts with inventory updates
-- **POS Sales:** Atomic sale transactions, server-side pricing, inventory decrement, payments, void with restoration
-- **Cash Sessions:** Open/close with expected vs actual balance variance
-- **Returns & Refunds:** Refund creation with inventory restoration and audit
-- **Pharmacy:** Drug details, product batches, FEFO allocation, dispensing records, quarantine/release, expiring batch detection
-- **BI/Reporting:** Sales summary, inventory report, store comparison
-- **AI Analytics:** Intent classification, approved analytical operations only
-- **Platform:** First-run installation, KYB encrypted documents, tenant approval gate, payment provider configuration
+The API contains modules for authentication, tenancy, authorization, subscriptions, products, inventory, stores, purchasing, sales, cash sessions, returns, pharmacy, reporting, AI, platform administration, campaigns, and jobs. The web app has a design system, shared layout, authentication pages, and selected feature pages. Presence of a module does not mean its complete workflow, authorization, UI, or operational behavior is accepted; consult the roadmap before relying on any capability.
 
 ## License and feedback
 
-This is a production-ready implementation. Feedback on the architecture should reference the section numbers in [`documentations/SaaS-Multi-Tenant-POS-Platform-Requirement.md`](<C:/Personal/Current Project/SaaS POS/documentations/SaaS-Multi-Tenant-POS-Platform-Requirement.md>).
+This project is under active development and is not production-ready. Feedback on the architecture should reference the section numbers in the [authoritative requirements blueprint](documentations/SaaS-Multi-Tenant-POS-Platform-Requirement.md).

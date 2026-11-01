@@ -1,3 +1,4 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -17,6 +18,7 @@ import { RequestWithUser } from '../auth/auth.guard';
 import { AuthGuard } from '../auth/auth.guard';
 import { RequirePermissions } from '../authorization/permission.decorator';
 import { PermissionGuard } from '../authorization/permission.guard';
+import { ApiJoiBody } from '../common/openapi/joi-body.decorator';
 import { JoiValidationPipe } from '../common/validation/joi-validation.pipe';
 import {
   createStoreSchema,
@@ -27,6 +29,7 @@ import {
 import { TenantContextService } from '../tenant/tenant-context.service';
 import { CreateStoreInput, ListStoresInput, UpdateStoreInput, StoresService } from './stores.service';
 
+@ApiBearerAuth('bearer')
 @Controller('stores')
 @UseGuards(AuthGuard, PermissionGuard)
 export class StoresController {
@@ -38,6 +41,7 @@ export class StoresController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions('stores.create')
+  @ApiJoiBody(createStoreSchema)
   @UsePipes(new JoiValidationPipe(createStoreSchema))
   async create(
     @Req() request: RequestWithUser,
@@ -82,6 +86,7 @@ export class StoresController {
 
   @Patch(':storeId')
   @RequirePermissions('stores.update')
+  @ApiJoiBody(updateStoreSchema)
   @UsePipes(new JoiValidationPipe(updateStoreSchema))
   async update(
     @Req() request: RequestWithUser,

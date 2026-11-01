@@ -2,7 +2,51 @@ import { test, expect } from '@playwright/test';
 
 test.describe('SaaS POS Smoke Tests', () => {
   test.beforeEach(async ({ page }) => {
-    // Start from the landing page
+    await page.route('**/api/v1/**', async (route) => {
+      const pathname = new URL(route.request().url()).pathname;
+      const user = {
+        id: 'e2e-user',
+        tenantId: 'e2e-tenant',
+        tenantName: 'Test Retail Store',
+        name: 'Test Owner',
+        email: 'owner@example.com',
+        permissions: ['products.view'],
+      };
+      let data: unknown = {};
+
+      if (pathname.endsWith('/auth/me')) {
+        data = user;
+      } else if (/\/auth\/(login|register)$/.test(pathname)) {
+        data = { accessToken: 'e2e-access-token', user };
+      } else if (pathname.endsWith('/reports/sales-summary')) {
+        data = {
+          totalSales: 0,
+          totalRevenue: '0.00',
+          totalTax: '0.00',
+          totalDiscount: '0.00',
+          averageOrderValue: '0.00',
+          byStore: [],
+          byPaymentMethod: {},
+          topProducts: [],
+        };
+      } else if (pathname.endsWith('/reports/inventory')) {
+        data = {
+          totalItems: 0,
+          lowStockCount: 0,
+          outOfStockCount: 0,
+          lowStockItems: [],
+          items: [],
+        };
+      } else if (pathname.endsWith('/products')) {
+        data = { items: [], total: 0 };
+      }
+
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data }),
+      });
+    });
+
     await page.goto('/');
   });
 
@@ -18,6 +62,7 @@ test.describe('SaaS POS Smoke Tests', () => {
   });
 
   test('should navigate to registration page', async ({ page }) => {
+    await page.goto('/login');
     await page.getByRole('link', { name: "Don't have an account? Register" }).click();
     await expect(page).toHaveURL('/register');
     await expect(page.getByRole('heading', { name: 'Register Tenant' })).toBeVisible();

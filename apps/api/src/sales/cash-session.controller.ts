@@ -1,3 +1,4 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -15,9 +16,15 @@ import { RequestWithUser } from '../auth/auth.guard';
 import { AuthGuard } from '../auth/auth.guard';
 import { RequirePermissions } from '../authorization/permission.decorator';
 import { PermissionGuard } from '../authorization/permission.guard';
+import { ApiRequestBody } from '../common/openapi/request-body.decorator';
+import {
+  closeCashSessionBodySchema,
+  openCashSessionBodySchema,
+} from '../common/openapi/request-body-schemas';
 import { TenantContextService } from '../tenant/tenant-context.service';
 import { CashSessionService, CloseCashSessionInput, OpenCashSessionInput } from './cash-session.service';
 
+@ApiBearerAuth('bearer')
 @Controller('cash-sessions')
 @UseGuards(AuthGuard, PermissionGuard)
 export class CashSessionController {
@@ -29,6 +36,7 @@ export class CashSessionController {
   @Post('open')
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions('sales.create')
+  @ApiRequestBody(openCashSessionBodySchema)
   async open(
     @Req() request: RequestWithUser,
     @Body() body: OpenCashSessionInput,
@@ -42,6 +50,7 @@ export class CashSessionController {
   @Post(':sessionId/close')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('sales.create')
+  @ApiRequestBody(closeCashSessionBodySchema)
   async close(
     @Req() request: RequestWithUser,
     @Param('sessionId') sessionId: string,

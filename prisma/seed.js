@@ -1,6 +1,19 @@
+const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('@prisma/client');
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error('DATABASE_URL is required to seed the database.');
+}
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({
+    connectionString,
+    max: 10,
+    connectionTimeoutMillis: 5000,
+    idleTimeoutMillis: 10000,
+  }),
+});
 
 const permissions = [
   ['dashboard.view', 'View the tenant dashboard'],

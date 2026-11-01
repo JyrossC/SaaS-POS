@@ -1,180 +1,57 @@
 # Environment Variables
 
-This project is designed for a local-first SaaS development workflow using a React frontend, a NestJS API, and a PostgreSQL database. Never commit real secrets or `.env` files. Keep only `.env.example` files in version control.
+This page distinguishes settings currently consumed by the application from names that appear in the example file but are not yet wired into the runtime. Do not infer a working feature from an environment variable being listed.
 
-## Required configuration model
+## Local configuration files
 
-Each runtime should use environment-specific config:
+- The API loads the repository-root `.env` file.
+- The web client reads `VITE_API_BASE_URL` from `apps/web/.env`; if it is absent, it defaults to `http://localhost:3000/api/v1`.
+- Only the root `.env.example` is tracked. There is no `apps/web/.env.example`.
+- Never commit `.env` files or real credentials.
 
-- App runtime configuration in `.env`
-- Frontend values in `apps/web/.env`
-- API values in `.env` or `apps/api/.env`
-- Secrets managed outside the repository in production and staging
+## API runtime configuration
 
-## Core environment variables
+The API validates the following required values at startup:
 
-### Application
+| Variable | Requirement | Purpose |
+|---|---|---|
+| `DATABASE_URL` | PostgreSQL connection URI | Prisma database connection |
+| `JWT_SECRET` | At least 32 characters | Signs authentication tokens |
+| `INSTALLATION_SECRET` | At least 32 characters | Protects first-run platform installation |
+| `KYB_DOCUMENT_ENCRYPTION_KEY` | Base64 encoding of exactly 32 bytes | Encrypts KYB documents |
 
-| Variable | Required | Default | Purpose |
-|---|---|---:|---|
-| `NODE_ENV` | Yes | `development` | Runtime mode: development, test, production |
-| `APP_NAME` | No | `saas-pos` | Human-readable application name |
-| `APP_URL` | No | `http://localhost:5173` | Public frontend URL |
-| `API_BASE_URL` | No | `http://localhost:3000/api/v1` | API base used by the web app |
-| `LOG_LEVEL` | No | `info` | Structured logging level |
+Optional API values and defaults:
 
-### Database
+| Variable | Default | Purpose |
+|---|---|---|
+| `JWT_EXPIRES_IN` | `15m` | Access-token lifetime |
+| `CORS_ORIGINS` | `http://localhost:5173` | Comma-separated allowed origins |
+| `PORT` | `3000` | API listen port |
+| `PRIVATE_STORAGE_PATH` | `apps/api/var/private` | Private document storage path |
+| `NODE_ENV` | `development` | Runtime environment |
+| `RATE_LIMIT_WINDOW_MS` | `900000` | General rate-limit window |
+| `RATE_LIMIT_MAX` | `100` | Requests allowed per general rate-limit window |
+| `LOG_LEVEL` | `info` | Structured logging level |
 
-| Variable | Required | Default | Purpose |
-|---|---|---:|---|
-| `DATABASE_URL` | Yes | `postgresql://postgres:postgres@localhost:5432/saas_pos` | Primary PostgreSQL connection string |
-| `DB_POOL_MIN` | No | `2` | Minimum DB pool connections |
-| `DB_POOL_MAX` | No | `10` | Maximum DB pool connections |
-| `DB_SSL` | No | `false` | Enable TLS for managed PostgreSQL |
+The API's startup validation is the source of truth for required settings. Update this document when the runtime schema changes.
 
-### Authentication and sessions
+## Web configuration
 
-| Variable | Required | Default | Purpose |
-|---|---|---:|---|
-| `JWT_SECRET` | Yes | none | Secret used to sign access tokens |
-| `JWT_EXPIRES_IN` | No | `15m` | Access token lifetime |
-| `JWT_REFRESH_SECRET` | Yes for refresh tokens | none | Separate secret for refresh tokens |
-| `JWT_REFRESH_EXPIRES_IN` | No | `7d` | Refresh token lifetime |
-| `SESSION_SECRET` | No | none | Used if cookie-based sessions are enabled |
-| `COOKIE_SECURE` | No | `false` | Restrict cookies to HTTPS in production |
-| `COOKIE_HTTP_ONLY` | No | `true` | Prevent client-side JS access to session cookies |
-| `PASSWORD_RESET_TOKEN_TTL` | No | `3600` | Reset-token lifespan in seconds |
-| `MFA_ISSUER_NAME` | No | `SaaS POS` | MFA issuer for authenticator apps |
-
-### Security and encryption
-
-| Variable | Required | Default | Purpose |
-|---|---|---:|---|
-| `ENCRYPTION_KEY` | Yes for encrypted fields | none | Key used for sensitive field encryption |
-| `CORS_ORIGINS` | No | `http://localhost:5173` | Allowed origins for API requests |
-| `HELMET_ENABLED` | No | `true` | Enables Helmet security headers |
-| `RATE_LIMIT_WINDOW_MS` | No | `60000` | Rate-limit window in milliseconds |
-| `RATE_LIMIT_MAX` | No | `120` | Requests allowed per window |
-
-### Redis and background jobs
-
-| Variable | Required | Default | Purpose |
-|---|---|---:|---|
-| `REDIS_URL` | No | `redis://localhost:6379` | Redis connection string |
-| `QUEUE_NAME` | No | `saas-pos` | Background job queue name |
-| `JOB_RETRY_LIMIT` | No | `3` | Maximum job retries |
-
-### File uploads and documents
-
-| Variable | Required | Default | Purpose |
-|---|---|---:|---|
-| `UPLOAD_DIR` | No | `./storage/uploads` | Local upload directory |
-| `MAX_FILE_SIZE_MB` | No | `10` | Largest acceptable user upload |
-| `S3_ENDPOINT` | No | none | Optional external object storage |
-| `S3_BUCKET` | No | none | Bucket for exports or files |
-| `S3_ACCESS_KEY_ID` | No | none | Storage credential |
-| `S3_SECRET_ACCESS_KEY` | No | none | Storage credential |
-
-### External providers
-
-| Variable | Required | Default | Purpose |
-|---|---|---:|---|
-| `SMTP_HOST` | No | none | Email provider host |
-| `SMTP_PORT` | No | `587` | SMTP port |
-| `SMTP_USER` | No | none | SMTP username |
-| `SMTP_PASSWORD` | No | none | SMTP password |
-| `SMS_PROVIDER` | No | none | SMS provider identifier |
-| `PAYMENT_PROVIDER_API_KEY` | No | none | SaaS billing or payment gateway key |
-| `AI_PROVIDER_API_KEY` | No | none | Approved AI analytics provider key |
-
-### Monitoring and observability
-
-| Variable | Required | Default | Purpose |
-|---|---|---:|---|
-| `SENTRY_DSN` | No | none | Error tracking DSN |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | No | none | Tracing endpoint |
-| `APP_INSIGHTS_CONNECTION_STRING` | No | none | Azure Monitor connection string |
-
-## Example `.env.example`
+Create `apps/web/.env` for a non-default API URL:
 
 ```env
-NODE_ENV=development
-APP_NAME=saas-pos
-APP_URL=http://localhost:5173
-API_BASE_URL=http://localhost:3000/api/v1
-
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/saas_pos
-DB_POOL_MIN=2
-DB_POOL_MAX=10
-
-JWT_SECRET=replace-with-a-strong-secret
-JWT_REFRESH_SECRET=replace-with-a-different-strong-secret
-JWT_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=7d
-SESSION_SECRET=replace-with-a-session-secret
-COOKIE_SECURE=false
-COOKIE_HTTP_ONLY=true
-
-ENCRYPTION_KEY=replace-with-a-secure-32-byte-key
-CORS_ORIGINS=http://localhost:5173
-HELMET_ENABLED=true
-RATE_LIMIT_WINDOW_MS=60000
-RATE_LIMIT_MAX=120
-
-REDIS_URL=redis://localhost:6379
-QUEUE_NAME=saas-pos
-JOB_RETRY_LIMIT=3
-
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_USER=
-SMTP_PASSWORD=
-PAYMENT_PROVIDER_API_KEY=
-AI_PROVIDER_API_KEY=
-
-SENTRY_DSN=
-LOG_LEVEL=info
+VITE_API_BASE_URL=http://localhost:3000/api/v1
 ```
 
-## Environment-specific behavior
+Only variables prefixed with `VITE_` are exposed to the Vite client bundle. Never put secrets in frontend environment variables.
 
-### Local development
+## Template-only or unverified variables
 
-- `NODE_ENV=development`
-- Local PostgreSQL via Docker or local install
-- Dev CORS enabled for the React app
-- Optional Redis for background jobs and caching
-- Detailed logging, no production masking
+The root `.env.example` also contains settings such as `JWT_REFRESH_SECRET`, `SESSION_SECRET`, `COOKIE_SECURE`, `ENCRYPTION_KEY`, `DB_POOL_MIN`, `DB_POOL_MAX`, `REDIS_URL`, queue options, SMTP/payment/AI provider keys, and `SENTRY_DSN`. Their presence in the template does not demonstrate that the corresponding runtime behavior is implemented or configured. Verify actual code paths and provider setup before depending on them; track missing behavior in the [production-readiness roadmap](../../production-readiness-roadmap.md).
 
-### Staging
+## Secret handling
 
-- Use non-production secrets
-- Restrict CORS to staging frontend origins
-- Require HTTPS and secure cookies
-- Run migrations only through controlled deployment steps
-
-### Production
-
-- Force `NODE_ENV=production`
-- Require HTTPS and secure cookies
-- Disable detailed stack traces in API responses
-- Limit DB connection pools and rate limits aggressively
-- Use managed secrets and centralized logging
-
-## Security guardrails
-
-- Never commit `.env`, `.env.local`, or secret files.
-- Use a separate secret store in CI, staging, and production.
-- Do not reuse the same JWT secret for all environments.
-- Rotate secrets on an operational schedule.
-- Keep AI provider credentials separated from customer data access permissions.
-
-## Validation checklist
-
-Before starting the app, confirm:
-
-- `DATABASE_URL` is reachable.
-- `JWT_SECRET` and `JWT_REFRESH_SECRET` are populated.
-- `ENCRYPTION_KEY` exists when sensitive data will be encrypted.
-- `CORS_ORIGINS` includes the frontend origin.
-- Redis and SMTP credentials are loaded only when the relevant modules are enabled.
+- Replace all example values with unique, high-entropy local secrets before starting the API.
+- Generate and store the KYB encryption key as a base64-encoded random 32-byte value.
+- Do not reuse secrets between environments or commit credentials.
+- Production and staging secrets must come from an appropriate secret manager, not checked-in files.

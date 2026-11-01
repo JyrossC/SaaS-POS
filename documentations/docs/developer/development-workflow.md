@@ -1,195 +1,83 @@
 # Development Workflow
 
-Commands for building, testing, linting, migrating, documenting, and deploying the platform. Run them from the repository root.
+Run commands from the repository root unless noted otherwise. Use Node.js 24.x, as pinned in the root `.nvmrc` and `package.json` engines field. The root `package.json` is the authoritative list of available scripts; use `npm run` to inspect it. API OpenAPI generation is available, but its request/response schemas are incomplete and the project is not yet a release candidate. See the [production-readiness roadmap](../../production-readiness-roadmap.md) for current evidence and completion gates.
 
-## Script index
-
-All scripts are defined in the root `package.json`. List them with:
+## Development servers
 
 ```bash
-npm run
-```
-
-## Build
-
-### Frontend (React + Vite)
-
-```bash
-# Development server with hot reload
-npm run dev:web
-
-# Production build
-npm run build:web
-
-# Type-check only (no emit)
-npm run typecheck:web
-```
-
-### API (NestJS)
-
-```bash
-# Development server with hot reload
 npm run dev:api
-
-# Production build
-npm run build:api
-
-# Type-check only
-npm run typecheck:api
+npm run dev:web
 ```
 
-### Full build (both apps)
+The API loads configuration from the root `.env`; the web client uses `VITE_API_BASE_URL` in `apps/web/.env` or its localhost default. See [environment variables](environment-variables.md).
+
+## Build and typecheck
 
 ```bash
-npm run build
-```
-
-## Testing
-
-### Unit tests
-
-```bash
-# All unit tests
-npm run test
-
-# Watch mode
-npm run test:watch
-
-# Specific app
-npm run test:api
-npm run test:web
-```
-
-### Isolation and security tests
-
-The platform has explicit cross-tenant isolation and concurrency tests. These are **hard gates** before merging tenant-facing code:
-
-```bash
-# Cross-tenant access tests
-npm run test:isolation
-
-# Concurrency / race-condition tests (subscription limits, stock)
-npm run test:concurrency
-
-# Pharmacy batch and expiry rules
-npm run test:pharmacy
-```
-
-### E2E
-
-```bash
-npm run test:e2e
-```
-
-### Coverage
-
-```bash
-npm run test:cov
-```
-
-## Linting and formatting
-
-```bash
-# Lint
-npm run lint
-
-# Lint and auto-fix
-npm run lint:fix
-
-# Format check
-npm run format:check
-
-# Format and write
-npm run format
-```
-
-## Database migrations
-
-Prisma is the recommended data-access layer. See `../scaffolding/database-conventions.md` for schema rules.
-
-```bash
-# Create a migration (after editing prisma/schema.prisma)
-npm run migrate:create
-# Prompts for a migration name; generates prisma/migrations/<timestamp>_<name>/
-
-# Apply all pending migrations
-npm run migrate:deploy
-
-# Reset the database (destroys all data) and re-apply
-npm run migrate:reset
-
-# Generate Prisma client after schema changes
-npm run prisma:generate
-```
-
-**Never edit a migration file after it is applied in any environment.** Create a new migration instead.
-
-## API documentation
-
-OpenAPI/Swagger is generated from decorators and JSDoc on the NestJS controllers and DTOs.
-
-```bash
-npm run docs:api        # builds the OpenAPI spec to dist/api-spec.json
-npm run docs:api:serve  # serves the Swagger UI locally
-```
-
-The Swagger UI is served at `/api/docs` when `NODE_ENV !== production`.
-
-## Seed data
-
-```bash
-npm run seed:platform    # permissions, plans, config — never business data
-```
-
-## Background jobs
-
-Scheduled and asynchronous tasks run through a job queue.
-
-```bash
-npm run jobs:process    # starts the job worker
-npm run jobs:list       # lists pending and failed jobs
-npm run jobs:retry      # retries failed jobs
-```
-
-## Production deployment
-
-### Pre-deploy checks
-
-```bash
-npm run build
-npm run lint
 npm run typecheck
-npm run test
-npm run migrate:deploy
+npm run build:api
+npm run build:web
+npm run build
 ```
 
-### Deploy
+`npm run build:web` performs a TypeScript build and Vite production bundle. Both builds and the root typecheck pass in the current local verification.
+
+## Tests and lint
+
+The destructive API integration suites require a dedicated PostgreSQL database whose name ends in `_test`. The Jest config loads root `.env` and then `.env.test`, while preserving an explicitly supplied `DATABASE_URL`; copy `.env.test.example` to `.env.test`, set its connection string, then create that database. Before migrating or seeding, temporarily set `DATABASE_URL` to that same test URL so Prisma targets the isolated database. The integration suites refuse to run against a database with any other name.
+
+On Windows PowerShell, set the connection string for the current shell before database setup:
+
+```powershell
+$env:DATABASE_URL = "postgresql://postgres:<local-password>@localhost:5432/saas_pos_test?schema=public"
+npm run migrate:deploy
+npm run migrate:status
+npm run db:seed
+npm test
+```
+
+Replace the example password with the local PostgreSQL password. Keep `.env.test` local and never commit it.
+
+Available root commands:
 
 ```bash
-npm run deploy
+npm test
+npm run test:isolation
+npm run test:concurrency
+npm run test:pharmacy
+npm run lint
 ```
 
-The deploy script should:
+The root test command runs the six Chromium Playwright smoke tests (which mock API calls) followed by the API Jest suite. The API suite includes live HTTP integration tests. Install the browser once with `npx playwright install chromium` if it is missing. The API suite requires the isolated `_test` database described above; never run it against a development or production database. The current local baseline is six browser tests and 18 API suites/88 tests passing. The dedicated API test wrappers run under the API workspace, for example:
 
-1. Build both apps.
-2. Apply pending migrations (never skip this).
-3. Run the test suite against the staging database.
-4. Deploy the API.
-5. Deploy the frontend.
-6. Invalidate the CDN / cache.
+```bash
+npm --workspace apps/api run test
+```
 
-## CI/CD
+The browser smoke tests do not replace backend-integrated E2E or CI release verification. There are no configured root `test:e2e`, `test:cov`, `test:watch`, `lint:fix`, or format scripts.
 
-The pipeline (`.github/workflows/*.yml`) runs on every push and PR:
+## Database
 
-1. Install dependencies.
-2. Lint and typecheck.
-3. Run unit, isolation, and concurrency tests.
-4. Build both apps.
-5. Run E2E against a fresh database.
+```bash
+npm run migrate:deploy
+npm run migrate:status
+npm run prisma:generate
+npm run db:seed
+```
 
-Migrations are validated but **not** applied in CI. The deploy job applies them.
+Install and start PostgreSQL 15+ directly on the development machine before running database commands.
+`npm run migrate:reset` destroys database data. Use it only with an explicitly disposable local database after confirming the data can be lost. Migration deployment to a clean database still needs documented CI/release evidence.
 
-## Environment management
+## API documentation and background jobs
 
-All environment variables are documented in `environment-variables.md`. Never commit `.env` files — only `.env.example`.
+In development, Swagger UI is served at `http://localhost:3000/api/v1/docs`; its OpenAPI JSON is at `/api/v1/docs-json`. Both routes are disabled when `NODE_ENV=production`.
+
+Run `npm run docs:api` to rebuild the API and regenerate the checked-in contract at `documentations/api/openapi.json`. The generator initializes `AppModule` and Prisma, so use a local or disposable test database by setting `DATABASE_URL`; never point documentation generation at production. The current spec documents all 40 request bodies (21 from Joi validation schemas and 19 from declared TypeScript inputs); 12 operations have explicit response schemas, and broader response coverage remains incomplete.
+
+`npm run docs:api:serve` starts the already-built API. Background job processing code exists, but there are no root `jobs:*` commands; the email/report handlers are placeholders.
+
+## Deployment and CI
+
+There is no configured root deploy script. The GitHub Actions workflow runs lint/typecheck, the root browser/API test command with PostgreSQL and Chromium, dependency audit, and a build job. Remote CI has not yet been verified, and the workflow does not establish a complete backend-integrated E2E, migration-release, staging deployment, or production rollback gate. Review the workflow and roadmap before relying on CI as release evidence.
+
+Never deploy from a local working tree. A production workflow must be added and rehearsed only after the full-system release gates pass.

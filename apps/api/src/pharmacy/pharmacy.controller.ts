@@ -1,3 +1,4 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -18,6 +19,14 @@ import { RequirePermissions } from '../authorization/permission.decorator';
 import { PermissionGuard } from '../authorization/permission.guard';
 import { TenantContextService } from '../tenant/tenant-context.service';
 import { EntitlementService } from '../subscription/entitlement.service';
+import { ApiJoiBody } from '../common/openapi/joi-body.decorator';
+import { ApiRequestBody } from '../common/openapi/request-body.decorator';
+import {
+  createBatchBodySchema,
+  createDrugDetailBodySchema,
+  dispenseBodySchema,
+  quarantineBodySchema,
+} from '../common/openapi/request-body-schemas';
 import { JoiValidationPipe } from '../common/validation/joi-validation.pipe';
 import {
   productIdParamSchema,
@@ -35,6 +44,7 @@ import {
   QuarantineInput,
 } from './pharmacy.service';
 
+@ApiBearerAuth('bearer')
 @Controller('pharmacy')
 @UseGuards(AuthGuard, PermissionGuard)
 export class PharmacyController {
@@ -47,6 +57,7 @@ export class PharmacyController {
   @Post('drug-details')
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions('pharmacy.batches.create')
+  @ApiRequestBody(createDrugDetailBodySchema)
   async createDrugDetail(
     @Req() request: RequestWithUser,
     @Body() body: CreateDrugDetailInput,
@@ -76,6 +87,7 @@ export class PharmacyController {
   @Post('batches')
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions('pharmacy.batches.create')
+  @ApiRequestBody(createBatchBodySchema)
   async createBatch(
     @Req() request: RequestWithUser,
     @Body() body: CreateBatchInput,
@@ -126,6 +138,7 @@ export class PharmacyController {
   @Post('dispense')
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions('pharmacy.dispensing.create')
+  @ApiRequestBody(dispenseBodySchema)
   async dispense(
     @Req() request: RequestWithUser,
     @Body() body: DispenseInput,
@@ -141,6 +154,7 @@ export class PharmacyController {
   @Post('prescriptions')
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions('pharmacy.batches.create')
+  @ApiJoiBody(createPrescriptionSchema)
   @UsePipes(new JoiValidationPipe(createPrescriptionSchema))
   async createPrescription(
     @Req() request: RequestWithUser,
@@ -196,6 +210,7 @@ export class PharmacyController {
   @Post('quarantine')
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions('pharmacy.batches.create')
+  @ApiRequestBody(quarantineBodySchema)
   async quarantineStock(
     @Req() request: RequestWithUser,
     @Body() body: QuarantineInput,

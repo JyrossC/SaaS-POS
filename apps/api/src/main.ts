@@ -9,6 +9,8 @@ import * as express from 'express';
 import { LoggingService } from './logging/logging.service';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule } from '@nestjs/swagger';
+import { createOpenApiDocument } from './openapi';
 
 loadEnvironmentFile({ path: resolve(__dirname, '../../../.env') });
 
@@ -103,6 +105,13 @@ async function bootstrap() {
       message: { error: 'Too many requests, please try again later.' },
     }),
   );
+
+  if (environment.NODE_ENV !== 'production') {
+    SwaggerModule.setup('docs', app, createOpenApiDocument(app), {
+      jsonDocumentUrl: 'docs-json',
+      useGlobalPrefix: true,
+    });
+  }
 
   await app.listen(environment.PORT);
 }

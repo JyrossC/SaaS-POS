@@ -5,6 +5,8 @@ import { PharmacyService } from '../pharmacy/pharmacy.service';
 import { SalesService } from '../sales/sales.service';
 import { ReturnsService } from '../sales/returns.service';
 import { EntitlementService } from '../subscription/entitlement.service';
+import { CampaignService } from '../campaigns/campaign.service';
+import { assertDedicatedTestDatabase } from '../testing/test-database';
 import * as argon2 from 'argon2';
 
 describe('Pharmacy: Safety and Traceability Tests', () => {
@@ -14,6 +16,8 @@ describe('Pharmacy: Safety and Traceability Tests', () => {
   let salesService: SalesService;
   let returnsService: ReturnsService;
   let entitlementService: EntitlementService;
+
+  const testRunId = `${process.pid}-${Date.now()}`;
 
   let tenantId: string;
   let storeId: string;
@@ -35,7 +39,15 @@ describe('Pharmacy: Safety and Traceability Tests', () => {
     return d;
   };
 
+  const setBatchQuantity = (batchId: string, quantity: string | number) =>
+    prisma.batchInventory.update({
+      where: { tenantId_storeId_batchId: { tenantId, storeId, batchId } },
+      data: { quantityOnHand: new Prisma.Decimal(quantity) },
+    });
+
   beforeAll(async () => {
+    assertDedicatedTestDatabase();
+
     module = await Test.createTestingModule({
       providers: [
         PrismaService,
@@ -43,6 +55,7 @@ describe('Pharmacy: Safety and Traceability Tests', () => {
         SalesService,
         ReturnsService,
         EntitlementService,
+        CampaignService,
       ],
     }).compile();
 
@@ -99,7 +112,7 @@ describe('Pharmacy: Safety and Traceability Tests', () => {
       },
     });
     const plan = await prisma.subscriptionPlan.create({
-      data: { code: 'PHARMACY-PLAN', name: 'Pharmacy Plan' },
+      data: {       code: `PHARMACY-PLAN-${testRunId}`, name: 'Pharmacy Plan' },
     });
     const planVersion = await prisma.subscriptionPlanVersion.create({
       data: {
@@ -241,7 +254,9 @@ describe('Pharmacy: Safety and Traceability Tests', () => {
   });
 
   afterAll(async () => {
-    await module.close();
+    if (module) {
+      await module.close();
+    }
   });
 
   describe('FEFO Allocation Ordering', () => {
@@ -258,14 +273,8 @@ describe('Pharmacy: Safety and Traceability Tests', () => {
     });
 
     it('should move to second batch when first is exhausted', async () => {
-      // First deplete batch1
-      await pharmacyService.allocateFEFO(
-        tenantId,
-        storeId,
-        productId,
-        new Prisma.Decimal(100),
-      );
-      // Verify batch1 is depleted
+      await setBatchQuantity(batchId1, 0);
+
       const batch1Inv = await prisma.batchInventory.findFirst({
         where: { tenantId, batchId: batchId1 },
       });
@@ -357,54 +366,49 @@ describe('Pharmacy: Safety and Traceability Tests', () => {
 
   describe('Quarantine Exclusion', () => {
     it('should not allocate quarantined batches through FEFO', async () => {
-      // Quarantine batch2
-      await prisma.stockQuarantine.create({
-        data: {
-          tenantId,
-          storeId,
-          batchId: batchId2,
-          quantity: new Prisma.Decimal(50),
-          reason: 'Quality issue',
-          quarantinedByMembershipId: membershipId,
+      await setBatchQuantity(batchId1, 100);
+      await setBatchQuantity(batchId2, 100);
+      await prisma.inventoryBalance.update({
+        where: {
+          tenantId_storeId_productId: { tenantId, storeId, productId },
         },
-      });
-      // Decrement batch2 inventory to reflect quarantine
-      await prisma.batchInventory.update({
-        where: { id: batchId2 },
-        data: { quantityOnHand: { decrement: new Prisma.Decimal(50) } },
+        data: { quantityOnHand: new Prisma.Decimal(200) },
       });
 
-      // Allocate 60 units: should only get from batch1 (which has 100 remaining after earlier allocations)
-      // But wait - earlier tests may have modified batch1. Let's check what's available.
-      const batch1Inv = await prisma.batchInventory.findFirst({
-        where: { tenantId, batchId: batchId1 },
-      });
-      const batch2Inv = await prisma.batchInventory.findFirst({
-        where: { tenantId, batchId: batchId2 },
+      const actor = {
+        id: userId,
+        membershipId,
+        tenantId,
+        email: 'pharmacy-owner@example.com',
+        role: 'Owner',
+        roleNames: ['Owner'],
+        permissions: ['pharmacy.batches.manage'],
+        storeIds: [storeId],
+        allStoreAccess: true,
+      };
+      const quarantine = await pharmacyService.quarantineStock(tenantId, actor, {
+        storeId,
+        batchId: batchId2,
+        quantity: '50',
+        reason: 'Quality issue',
       });
 
       const allocation = await pharmacyService.allocateFEFO(
         tenantId,
         storeId,
         productId,
-        new Prisma.Decimal(batch1Inv!.quantityOnHand),
+        new Prisma.Decimal(60),
       );
-      // Should NOT include quarantined batch2
       expect(allocation.some((a) => a.batchId === batchId2)).toBe(false);
+      await pharmacyService.releaseQuarantine(tenantId, quarantine.id, actor);
     });
   });
 
   describe('Batch Depletion', () => {
     it('should prevent dispensing more than available batch stock', async () => {
       // Reset batch inventory to known state
-      await prisma.batchInventory.update({
-        where: { id: batchId1 },
-        data: { quantityOnHand: new Prisma.Decimal(10) },
-      });
-      await prisma.batchInventory.update({
-        where: { id: batchId2 },
-        data: { quantityOnHand: new Prisma.Decimal(10) },
-      });
+      await setBatchQuantity(batchId1, 10);
+      await setBatchQuantity(batchId2, 10);
       await prisma.inventoryBalance.update({
         where: {
           tenantId_storeId_productId: { tenantId, storeId, productId },
@@ -424,16 +428,31 @@ describe('Pharmacy: Safety and Traceability Tests', () => {
         allStoreAccess: true,
       };
 
+      const prescription = await pharmacyService.createPrescription(tenantId, actor, {
+        storeId,
+        items: [{ productId, quantityPrescribed: '25' }],
+      });
+
       // Try to dispense 25 units (only 20 available across both batches)
       await expect(
         pharmacyService.dispense(tenantId, actor, {
           storeId,
+          prescriptionId: prescription!.id,
           items: [{ productId, quantity: '25' }],
         }),
       ).rejects.toThrow(/Insufficient non-expired stock/);
     });
 
     it('should successfully dispense within available stock', async () => {
+      await setBatchQuantity(batchId1, 10);
+      await setBatchQuantity(batchId2, 10);
+      await prisma.inventoryBalance.update({
+        where: {
+          tenantId_storeId_productId: { tenantId, storeId, productId },
+        },
+        data: { quantityOnHand: new Prisma.Decimal(20) },
+      });
+
       const actor = {
         id: userId,
         membershipId,
@@ -446,8 +465,13 @@ describe('Pharmacy: Safety and Traceability Tests', () => {
         allStoreAccess: true,
       };
 
+      const prescription = await pharmacyService.createPrescription(tenantId, actor, {
+        storeId,
+        items: [{ productId, quantityPrescribed: '15' }],
+      });
       const result = await pharmacyService.dispense(tenantId, actor, {
         storeId,
+        prescriptionId: prescription!.id,
         items: [{ productId, quantity: '15' }],
       });
       expect(result).toBeDefined();
@@ -455,7 +479,7 @@ describe('Pharmacy: Safety and Traceability Tests', () => {
 
       // Verify batch inventory was decremented
       const remainingTotal = await prisma.batchInventory.aggregate({
-        where: { tenantId, storeId, batch: { productId } },
+        where: { tenantId, storeId, batchId: { in: [batchId1, batchId2] } },
         _sum: { quantityOnHand: true },
       });
       expect(remainingTotal._sum?.quantityOnHand?.toNumber()).toBeLessThanOrEqual(5);
@@ -465,10 +489,8 @@ describe('Pharmacy: Safety and Traceability Tests', () => {
   describe('Quarantine and Release', () => {
     it('should quarantine stock and remove from available inventory', async () => {
       // Reset inventory
-      await prisma.batchInventory.update({
-        where: { id: batchId1 },
-        data: { quantityOnHand: new Prisma.Decimal(50) },
-      });
+      await setBatchQuantity(batchId1, 50);
+      await setBatchQuantity(batchId2, 0);
       await prisma.inventoryBalance.update({
         where: {
           tenantId_storeId_productId: { tenantId, storeId, productId },
@@ -597,10 +619,8 @@ describe('Pharmacy: Safety and Traceability Tests', () => {
   describe('Prescription Dispensing Validation', () => {
     it('should dispense against a prescription and track quantity', async () => {
       // Reset inventory
-      await prisma.batchInventory.update({
-        where: { id: batchId1 },
-        data: { quantityOnHand: new Prisma.Decimal(100) },
-      });
+      await setBatchQuantity(batchId1, 100);
+      await setBatchQuantity(batchId2, 0);
       await prisma.inventoryBalance.update({
         where: {
           tenantId_storeId_productId: { tenantId, storeId, productId },
@@ -677,10 +697,7 @@ describe('Pharmacy: Safety and Traceability Tests', () => {
       });
 
       // Reset inventory for this test
-      await prisma.batchInventory.update({
-        where: { id: batchId1 },
-        data: { quantityOnHand: new Prisma.Decimal(100) },
-      });
+      await setBatchQuantity(batchId1, 100);
 
       // Try to dispense 10 units against a 5-unit prescription
       await expect(
@@ -706,10 +723,7 @@ describe('Pharmacy: Safety and Traceability Tests', () => {
       };
 
       // Reset inventory
-      await prisma.batchInventory.update({
-        where: { id: batchId1 },
-        data: { quantityOnHand: new Prisma.Decimal(100) },
-      });
+      await setBatchQuantity(batchId1, 100);
 
       // Try to dispense without prescriptionId for a prescription-required product
       await expect(
@@ -717,7 +731,7 @@ describe('Pharmacy: Safety and Traceability Tests', () => {
           storeId,
           items: [{ productId, quantity: '5' }],
         }),
-      ).rejects.toThrow(/requires a valid prescription/);
+      ).rejects.toThrow(/prescription is required/i);
     });
   });
 
@@ -744,14 +758,8 @@ describe('Pharmacy: Safety and Traceability Tests', () => {
       });
 
       // Reset other batches to empty so only expired stock is available
-      await prisma.batchInventory.update({
-        where: { id: batchId1 },
-        data: { quantityOnHand: new Prisma.Decimal(0) },
-      });
-      await prisma.batchInventory.update({
-        where: { id: batchId2 },
-        data: { quantityOnHand: new Prisma.Decimal(0) },
-      });
+      await setBatchQuantity(batchId1, 0);
+      await setBatchQuantity(batchId2, 0);
       await prisma.inventoryBalance.update({
         where: {
           tenantId_storeId_productId: { tenantId, storeId, productId },
@@ -784,10 +792,8 @@ describe('Pharmacy: Safety and Traceability Tests', () => {
 
     it('should complete sale using non-expired batch stock through POS', async () => {
       // Restore non-expired stock
-      await prisma.batchInventory.update({
-        where: { id: batchId1 },
-        data: { quantityOnHand: new Prisma.Decimal(50) },
-      });
+      await setBatchQuantity(batchId1, 50);
+      await setBatchQuantity(batchId2, 0);
       await prisma.inventoryBalance.update({
         where: {
           tenantId_storeId_productId: { tenantId, storeId, productId },
@@ -834,10 +840,8 @@ describe('Pharmacy: Safety and Traceability Tests', () => {
       };
 
       // Ensure stock is available
-      await prisma.batchInventory.update({
-        where: { id: batchId1 },
-        data: { quantityOnHand: new Prisma.Decimal(50) },
-      });
+      await setBatchQuantity(batchId1, 50);
+      await setBatchQuantity(batchId2, 0);
       await prisma.inventoryBalance.update({
         where: {
           tenantId_storeId_productId: { tenantId, storeId, productId },

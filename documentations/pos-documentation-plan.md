@@ -47,7 +47,7 @@ Create a complete documentation suite for the SaaS Multi-Tenant POS Platform, co
 | File | Purpose |
 |---|---|
 | `.kilo/mcp/README.md` | Declares MCP servers the agent may use (db, git, lint, test) and their config |
-| `documentations/docs/devtools/README.md` | Dev tool inventory: Docker compose, Prisma, Jest/Vitest, ESLint, Swagger, CI/CD |
+| `documentations/docs/devtools/README.md` | Dev tool inventory: PostgreSQL, Prisma, Jest/Vitest, ESLint, Swagger, CI/CD |
 
 ## Key rules to encode (from the blueprint)
 - Tenant isolation is enforced at every data-access boundary; never trust `tenant_id` from the request.
