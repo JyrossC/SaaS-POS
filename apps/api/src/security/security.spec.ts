@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../database/prisma.service';
 import { Prisma } from '@prisma/client';
 import { AuthService } from '../auth/auth.service';
+import { EmailService } from '../email/email.service';
 import { EntitlementService } from '../subscription/entitlement.service';
 import { TenantContextService } from '../tenant/tenant-context.service';
 import { assertDedicatedTestDatabase } from '../testing/test-database';
@@ -42,6 +43,7 @@ describe('Security: Cross-Tenant and Cross-Store Access Control', () => {
       providers: [
         PrismaService,
         AuthService,
+        { provide: EmailService, useValue: { sendPasswordReset: jest.fn() } },
         EntitlementService,
         TenantContextService,
       ],
@@ -299,9 +301,12 @@ describe('Security: Cross-Tenant and Cross-Store Access Control', () => {
     tenantCUserId = userC.id;
     tenantCMembershipId = membershipC.id;
 
-    tenantAToken = authService.signToken(userA.id, membershipA.id);
-    tenantBToken = authService.signToken(userB.id, membershipB.id);
-    tenantCToken = authService.signToken(userC.id, membershipC.id);
+    const sessionA = await authService.createUserSession(userA.id, membershipA.id);
+    const sessionB = await authService.createUserSession(userB.id, membershipB.id);
+    const sessionC = await authService.createUserSession(userC.id, membershipC.id);
+    tenantAToken = authService.signToken(userA.id, membershipA.id, sessionA.id);
+    tenantBToken = authService.signToken(userB.id, membershipB.id, sessionB.id);
+    tenantCToken = authService.signToken(userC.id, membershipC.id, sessionC.id);
   });
 
   afterAll(async () => {

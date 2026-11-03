@@ -1,0 +1,1 @@
+https://www.zanrevenue.org/tax/vat-on-digital-service

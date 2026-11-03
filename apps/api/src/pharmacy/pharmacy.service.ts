@@ -205,8 +205,34 @@ export class PharmacyService {
       },
       include: {
         product: { select: { id: true, sku: true, name: true, baseUnit: true } },
+        inventory: {
+          where: { tenantId, ...(storeIds ? { storeId: { in: storeIds } } : {}) },
+          include: { store: { select: { id: true, name: true, code: true } } },
+        },
       },
       orderBy: [{ expiresAt: 'asc' }],
+    });
+  }
+
+  async listActiveQuarantines(tenantId: string, storeIds?: string[]) {
+    return this.prisma.stockQuarantine.findMany({
+      where: {
+        tenantId,
+        releasedAt: null,
+        ...(storeIds ? { storeId: { in: storeIds } } : {}),
+      },
+      include: {
+        store: { select: { id: true, name: true, code: true } },
+        batch: {
+          select: {
+            id: true,
+            batchNumber: true,
+            expiresAt: true,
+            product: { select: { id: true, sku: true, name: true, baseUnit: true } },
+          },
+        },
+      },
+      orderBy: [{ createdAt: 'desc' }],
     });
   }
 

@@ -1,21 +1,44 @@
 import Joi from 'joi';
 
 export const loginSchema = Joi.object({
-  email: Joi.string().trim().email().required(),
+  email: Joi.string().trim().lowercase().email().required(),
   tenantSlug: Joi.string().trim().lowercase().pattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).required(),
   password: Joi.string().min(8).required(),
+  mfaCode: Joi.string().trim().max(64).optional(),
+}).required();
+
+export const emailVerificationSchema = Joi.object({
+  token: Joi.string().trim().min(32).max(256).required(),
+}).required();
+
+export const mfaCodeSchema = Joi.object({
+  code: Joi.string().trim().min(6).max(64).required(),
+}).required();
+
+export const emailSchema = Joi.object({
+  email: Joi.string().trim().lowercase().email().required(),
 }).required();
 
 export const installationSchema = Joi.object({
   platformName: Joi.string().trim().min(1).max(120).required(),
   adminName: Joi.string().trim().min(1).max(120).required(),
-  adminEmail: Joi.string().trim().email().required(),
+  adminEmail: Joi.string().trim().lowercase().email().required(),
   password: Joi.string().min(12).max(128).required(),
 }).required();
 
 export const platformLoginSchema = Joi.object({
-  email: Joi.string().trim().email().required(),
+  email: Joi.string().trim().lowercase().email().required(),
   password: Joi.string().min(1).max(128).required(),
+  mfaCode: Joi.string().trim().max(64).optional(),
+}).required();
+
+export const platformSetupTokenSchema = Joi.object({
+  setupToken: Joi.string().trim().min(32).max(2048).required(),
+}).required();
+
+export const platformMfaConfirmationSchema = Joi.object({
+  setupToken: Joi.string().trim().min(32).max(2048).required(),
+  code: Joi.string().trim().min(6).max(64).required(),
 }).required();
 
 export const kybDocumentUploadSchema = Joi.object({
@@ -29,6 +52,151 @@ export const kybDocumentReviewSchema = Joi.object({
     then: Joi.required(),
     otherwise: Joi.optional().allow(''),
   }),
+}).required();
+
+export const tenantRejectionSchema = Joi.object({
+  reason: Joi.string().trim().min(1).max(1000).required(),
+}).required();
+
+export const platformTenantListSchema = Joi.object({
+  search: Joi.string().trim().max(200).optional(),
+  status: Joi.string().valid('PENDING_REVIEW', 'ACTIVE', 'REJECTED', 'SUSPENDED').optional(),
+  page: Joi.number().integer().min(1).default(1),
+  pageSize: Joi.number().integer().min(1).max(100).default(25),
+}).required();
+
+export const platformAdminInvitationSchema = Joi.object({
+  email: Joi.string().trim().lowercase().email().required(),
+  name: Joi.string().trim().min(1).max(120).required(),
+}).required();
+
+export const platformAdminInvitationAcceptanceSchema = Joi.object({
+  token: Joi.string().trim().min(32).max(256).required(),
+  password: Joi.string().min(12).max(128).required(),
+}).required();
+
+export const platformAdminStatusSchema = Joi.object({
+  status: Joi.string().valid('ACTIVE', 'DISABLED').required(),
+}).required();
+
+export const platformTenantStatusSchema = Joi.object({
+  status: Joi.string().valid('ACTIVE', 'SUSPENDED').required(),
+}).required();
+
+const platformPlanVersionSchema = {
+  trialDays: Joi.number().integer().min(0).max(365).required(),
+  billingPeriodDays: Joi.number().integer().min(1).max(365).required(),
+  currency: Joi.string().trim().uppercase().length(3).pattern(/^[A-Z]{3}$/).required(),
+  price: Joi.string().pattern(/^\d{1,15}(?:\.\d{1,4})?$/).allow(null).required(),
+  entitlements: Joi.object()
+    .pattern(/^[a-z][a-z0-9_.-]{0,79}$/, Joi.any())
+    .max(100)
+    .required(),
+};
+
+export const platformPlanCreateSchema = Joi.object({
+  code: Joi.string().trim().uppercase().pattern(/^[A-Z0-9][A-Z0-9_-]{1,39}$/).required(),
+  name: Joi.string().trim().min(1).max(120).required(),
+  ...platformPlanVersionSchema,
+}).required();
+
+export const platformPlanVersionCreateSchema = Joi.object(platformPlanVersionSchema).required();
+
+export const platformPlanAvailabilitySchema = Joi.object({
+  isAvailable: Joi.boolean().required(),
+}).required();
+
+export const fiscalJurisdictionSchema = Joi.string()
+  .valid('MAINLAND_TANZANIA', 'ZANZIBAR')
+  .required();
+
+const fiscalCredentialsSchema = Joi.object()
+  .pattern(/^[A-Za-z][A-Za-z0-9_.-]{0,63}$/, Joi.string().max(4096))
+  .min(1)
+  .max(20);
+
+const fiscalNullableHttpsUrl = Joi.string()
+  .trim()
+  .uri({ scheme: ['https'] })
+  .max(2048)
+  .allow(null);
+
+export const fiscalProviderConfigurationSchema = Joi.object({
+  providerName: Joi.string().trim().min(1).max(120).required(),
+  productionEndpoint: fiscalNullableHttpsUrl.required(),
+  sandboxEndpoint: fiscalNullableHttpsUrl.required(),
+  documentationUrl: fiscalNullableHttpsUrl.required(),
+  approvalStatus: Joi.string()
+    .valid('UNVERIFIED', 'SANDBOX_VALIDATED', 'AUTHORITY_APPROVED')
+    .required(),
+  approvalEvidenceReference: Joi.string().trim().max(500).allow(null, '').required(),
+  isAvailable: Joi.boolean().required(),
+  credentials: fiscalCredentialsSchema.optional(),
+  clearCredentials: Joi.boolean().default(false),
+}).required();
+
+export const fiscalAddonOfferSchema = Joi.object({
+  isAvailable: Joi.boolean().required(),
+  monthlyPrice: Joi.string().pattern(/^(?:0|[1-9]\d{0,14})(?:\.\d{1,4})?$/).allow(null).required(),
+  annualPrice: Joi.string().pattern(/^(?:0|[1-9]\d{0,14})(?:\.\d{1,4})?$/).allow(null).required(),
+}).required();
+
+export const fiscalAddonRequestUpdateSchema = Joi.object({
+  status: Joi.string().valid('CONTACTED', 'CLOSED').required(),
+  message: Joi.string().trim().max(1000).allow(null, '').optional(),
+}).required();
+
+export const fiscalAddonCheckoutSchema = Joi.object({
+  jurisdiction: fiscalJurisdictionSchema,
+  billingPeriod: Joi.string().valid('MONTHLY', 'ANNUAL').required(),
+}).required();
+
+export const fiscalAddonPaymentSimulationSchema = Joi.object({
+  outcome: Joi.string().valid('PAID', 'FAILED', 'CANCELED', 'TIMEOUT').required(),
+  idempotencyKey: Joi.string().guid({ version: ['uuidv4'] }).required(),
+}).required();
+
+export const tenantFiscalProfileSchema = Joi.object({
+  legalName: Joi.string().trim().max(200).allow(null, '').required(),
+  taxIdentificationNumber: Joi.string().trim().max(64).allow(null, '').required(),
+  vatRegistrationNumber: Joi.string().trim().max(64).allow(null, '').required(),
+  providerConfigurationId: Joi.string().trim().max(128).allow(null).required(),
+  credentials: fiscalCredentialsSchema.optional(),
+  clearCredentials: Joi.boolean().default(false),
+}).required();
+
+export const tenantFiscalAddonRequestSchema = Joi.object({
+  jurisdiction: fiscalJurisdictionSchema,
+  message: Joi.string().trim().max(1000).allow(null, '').optional(),
+}).required();
+
+export const fiscalSimulationSchema = Joi.object({
+  jurisdiction: fiscalJurisdictionSchema,
+  scenario: Joi.string()
+    .valid('ACCEPTED', 'REJECTED', 'TIMEOUT', 'DUPLICATE', 'RECOVERED')
+    .required(),
+}).required();
+
+export const platformTenantPlanAssignmentSchema = Joi.object({
+  planVersionId: Joi.string().trim().min(1).max(128).required(),
+}).required();
+
+export const platformSupportAccessSchema = Joi.object({
+  tenantId: Joi.string().trim().min(1).max(128).required(),
+  purpose: Joi.string().trim().min(10).max(1000).required(),
+  scopes: Joi.array()
+    .items(Joi.string().valid('tenant_profile', 'stores', 'products', 'sales_summary'))
+    .min(1)
+    .unique()
+    .required(),
+  durationMinutes: Joi.number().integer().min(5).max(60).default(30),
+}).required();
+
+export const updateBusinessSettingsSchema = Joi.object({
+  name: Joi.string().trim().min(1).max(120).required(),
+  businessAddress: Joi.string().trim().max(500).allow('', null).required(),
+  contactEmail: Joi.string().trim().lowercase().email().max(254).allow('', null).required(),
+  contactPhone: Joi.string().trim().max(40).allow('', null).required(),
 }).required();
 
 export const paymentProviderNameSchema = Joi.string()
@@ -112,7 +280,7 @@ export const registerTenantSchema = Joi.object({
   tenantSlug: Joi.string().trim().lowercase().pattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).min(2).max(60).required(),
   businessType: Joi.string().valid('RETAIL', 'PHARMACY', 'HYBRID').required(),
   ownerName: Joi.string().trim().min(2).max(120).required(),
-  ownerEmail: Joi.string().trim().email().required(),
+  ownerEmail: Joi.string().trim().lowercase().email().required(),
   password: Joi.string().min(12).max(128).required(),
   planCode: Joi.string().trim().min(1).max(60).required(),
 }).required();
@@ -124,9 +292,26 @@ export const acceptInvitationSchema = Joi.object({
 }).required();
 
 export const inviteStaffSchema = Joi.object({
-  email: Joi.string().trim().email().required(),
+  email: Joi.string().trim().lowercase().email().required(),
   roleId: Joi.string().trim().required(),
 }).required();
+
+const rolePermissionCodes = Joi.array()
+  .items(Joi.string().trim().min(1).max(100))
+  .unique()
+  .max(100);
+
+export const createTenantRoleSchema = Joi.object({
+  name: Joi.string().trim().min(2).max(80).required(),
+  description: Joi.string().trim().max(500).allow(null, '').optional(),
+  permissionCodes: rolePermissionCodes.optional(),
+}).required();
+
+export const updateTenantRoleSchema = Joi.object({
+  name: Joi.string().trim().min(2).max(80).optional(),
+  description: Joi.string().trim().max(500).allow(null, '').optional(),
+  permissionCodes: rolePermissionCodes.optional(),
+}).min(1).required();
 
 // Query parameter validation schemas
 
@@ -227,7 +412,7 @@ export const paymentWebhookBodySchema = Joi.object({
 }).required();
 
 export const forgotPasswordSchema = Joi.object({
-  email: Joi.string().trim().email().required(),
+  email: Joi.string().trim().lowercase().email().required(),
 }).required();
 
 export const resetPasswordSchema = Joi.object({
@@ -321,4 +506,3 @@ export const updateCustomerSegmentSchema = Joi.object({
   rules: Joi.object().optional(),
   description: Joi.string().trim().max(1000).allow(null, '').optional(),
 }).required();
-

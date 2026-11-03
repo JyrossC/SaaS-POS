@@ -3,6 +3,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
+import { getBusinessDateRange } from '../common/business-time';
 
 /**
  * Report formulas:
@@ -15,7 +16,7 @@ import { PrismaService } from '../database/prisma.service';
  * - topProducts: SUM(item.quantity) and SUM(item.totalPrice) grouped by product, sorted by revenue desc, top 10.
  *
  * Date boundaries:
- * - startDate and endDate are inclusive. endDate is extended to 23:59:59.999 of the local day.
+ * - Start and end dates are inclusive business-calendar dates in the configured launch timezone.
  * - Default startDate = first day of current month; default endDate = today.
  *
  * Empty-data behavior:
@@ -41,9 +42,7 @@ export class ReportingService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getSalesSummary(tenantId: string, query: SalesSummaryQuery) {
-    const startDate = new Date(query.startDate);
-    const endDate = new Date(query.endDate);
-    endDate.setHours(23, 59, 59, 999);
+    const { start: startDate, end: endDate } = getBusinessDateRange(query.startDate, query.endDate);
 
     const where: Prisma.SaleWhereInput = {
       tenantId,
@@ -226,9 +225,7 @@ export class ReportingService {
     endDate: string,
     storeIds?: string[],
   ) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
+    const { start, end } = getBusinessDateRange(startDate, endDate);
 
     const stores = await this.prisma.store.findMany({
       where: {

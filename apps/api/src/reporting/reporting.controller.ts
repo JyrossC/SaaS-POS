@@ -13,6 +13,7 @@ import { RequirePermissions } from '../authorization/permission.decorator';
 import { PermissionGuard } from '../authorization/permission.guard';
 import { TenantContextService } from '../tenant/tenant-context.service';
 import { EntitlementService } from '../subscription/entitlement.service';
+import { getBusinessDateInputValue } from '../common/business-time';
 import { ReportingService } from './reporting.service';
 
 @ApiBearerAuth('bearer')
@@ -49,9 +50,9 @@ export class ReportingController {
       }
     }
 
-    const now = new Date();
-    const start = startDate || new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    const end = endDate || now.toISOString().split('T')[0];
+    const today = getBusinessDateInputValue();
+    const start = startDate || `${today.slice(0, 7)}-01`;
+    const end = endDate || today;
     return this.reportingService.getSalesSummary(user.tenantId, {
       storeId,
       storeIds: effectiveStoreIds,
@@ -104,9 +105,9 @@ export class ReportingController {
       ? (storeId ? [storeId] : undefined)
       : (storeId ? [storeId] : user.storeIds);
 
-    const now = new Date();
-    const start = startDate || new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    const end = endDate || now.toISOString().split('T')[0];
+    const today = getBusinessDateInputValue();
+    const start = startDate || `${today.slice(0, 7)}-01`;
+    const end = endDate || today;
     return this.reportingService.getStoreComparison(
       user.tenantId,
       start,

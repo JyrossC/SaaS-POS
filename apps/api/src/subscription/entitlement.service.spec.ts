@@ -16,11 +16,13 @@ describe('EntitlementService', () => {
     id: 'user-1',
     membershipId: 'membership-1',
     tenantId: 'tenant-1',
+    tenantStatus: 'ACTIVE',
     email: 'owner@example.com',
     role: 'Tenant Owner',
     roleNames: ['Tenant Owner'],
     permissions: ['products.view', 'stores.create', 'staff.invite'],
     storeIds: [],
+    mfaEnabled: false,
     allStoreAccess: true,
   };
 

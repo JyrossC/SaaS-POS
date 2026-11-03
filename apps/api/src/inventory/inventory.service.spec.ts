@@ -25,11 +25,13 @@ describe('InventoryService', () => {
     id: 'user-1',
     membershipId: 'membership-1',
     tenantId: 'tenant-1',
+    tenantStatus: 'ACTIVE',
     email: 'manager@example.com',
     role: 'Store Manager',
     roleNames: ['Store Manager'],
     permissions: ['inventory.adjust'],
     storeIds: ['store-1'],
+    mfaEnabled: false,
     allStoreAccess: false,
   };
   let service: InventoryService;

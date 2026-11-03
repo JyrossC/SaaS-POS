@@ -2,6 +2,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { getBusinessDateInputValue } from '../common/business-time';
 import { ReportingService } from '../reporting/reporting.service';
 
 /**
@@ -52,9 +53,9 @@ export class AIService {
 
     switch (intent) {
       case 'sales_summary': {
-        const now = new Date();
-        const startDate = request.startDate || new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-        const endDate = request.endDate || now.toISOString().split('T')[0];
+        const today = getBusinessDateInputValue();
+        const startDate = request.startDate || `${today.slice(0, 7)}-01`;
+        const endDate = request.endDate || today;
         const result = await this.reportingService.getSalesSummary(tenantId, {
           storeId: request.storeId,
           startDate,
@@ -73,9 +74,9 @@ export class AIService {
         break;
       }
       case 'top_products': {
-        const now = new Date();
-        const startDate = request.startDate || new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-        const endDate = request.endDate || now.toISOString().split('T')[0];
+        const today = getBusinessDateInputValue();
+        const startDate = request.startDate || `${today.slice(0, 7)}-01`;
+        const endDate = request.endDate || today;
         const result = await this.reportingService.getSalesSummary(tenantId, {
           storeId: request.storeId,
           startDate,
@@ -86,9 +87,9 @@ export class AIService {
         break;
       }
       case 'store_comparison': {
-        const now = new Date();
-        const startDate = request.startDate || new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-        const endDate = request.endDate || now.toISOString().split('T')[0];
+        const today = getBusinessDateInputValue();
+        const startDate = request.startDate || `${today.slice(0, 7)}-01`;
+        const endDate = request.endDate || today;
         const result = await this.reportingService.getStoreComparison(tenantId, startDate, endDate);
         data = result as unknown as Record<string, unknown>;
         summary = `Store comparison for ${startDate} to ${endDate}: ${result.stores.length} stores analyzed.`;

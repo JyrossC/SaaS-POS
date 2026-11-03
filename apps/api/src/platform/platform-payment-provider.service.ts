@@ -1,4 +1,4 @@
-﻿import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { PaymentProviderName, PlatformPaymentProviderConfig } from './platform.types';
@@ -168,6 +168,16 @@ export class PlatformPaymentProviderService {
       if (!invoice) {
         throw new NotFoundException(`Invoice ${input.invoiceId} not found.`);
       }
+      if (invoice.fiscalAddonSubscriptionId) {
+        if (invoice.isTestMode) {
+          throw new BadRequestException(
+            'Test fiscal add-on invoices can only be settled by the development billing simulator.',
+          );
+        }
+        if (invoice.status !== 'PENDING_PAYMENT') {
+          throw new BadRequestException('Fiscal add-on invoice is no longer pending payment.');
+        }
+      }
     }
 
     // Resolve tenant from invoice
@@ -183,12 +193,28 @@ export class PlatformPaymentProviderService {
         throw new NotFoundException(`No invoice found for provider reference ${input.providerRef}.`);
       }
 
+      if (targetInvoice.fiscalAddonSubscriptionId && targetInvoice.isTestMode) {
+        throw new BadRequestException(
+          'Test fiscal add-on invoices can only be settled by the development billing simulator.',
+        );
+      }
+      if (targetInvoice.fiscalAddonSubscriptionId) {
+        const webhookAmount = new Prisma.Decimal(input.amount);
+        if (!webhookAmount.equals(targetInvoice.amount) || input.currency !== targetInvoice.currency) {
+          throw new BadRequestException('Fiscal add-on payment amount or currency does not match the invoice.');
+        }
+        if (targetInvoice.status !== 'PENDING_PAYMENT') {
+          throw new BadRequestException('Fiscal add-on invoice is no longer pending payment.');
+        }
+      }
+
       const paymentData: Prisma.SubscriptionPaymentCreateInput = {
         invoice: { connect: { id: targetInvoice.id } },
         amount: new Prisma.Decimal(input.amount),
         currency: input.currency,
         status: input.status,
         providerReference: input.providerRef,
+        isTestMode: targetInvoice.isTestMode,
         provider: { connect: { id: providerRecord.id } },
       };
       if (input.metadata !== undefined && input.metadata !== null) {
@@ -205,11 +231,31 @@ export class PlatformPaymentProviderService {
           where: { id: targetInvoice.id },
           data: { status: 'PAID', paidAt: new Date() },
         });
+        if (targetInvoice.fiscalAddonSubscriptionId) {
+          await tx.fiscalAddonSubscription.update({
+            where: { id: targetInvoice.fiscalAddonSubscriptionId },
+            data: {
+              status: 'ACTIVE',
+              billingPeriod: targetInvoice.fiscalBillingPeriod ?? undefined,
+              currentPeriodStartsAt: targetInvoice.fiscalPeriodStartsAt ?? new Date(),
+              currentPeriodEndsAt: targetInvoice.fiscalPeriodEndsAt ?? undefined,
+            },
+          });
+        }
       } else if (input.status === 'FAILED') {
         await tx.subscriptionInvoice.update({
           where: { id: targetInvoice.id },
           data: { status: 'FAILED' },
         });
+        if (targetInvoice.fiscalAddonSubscriptionId) {
+          await tx.fiscalAddonSubscription.updateMany({
+            where: {
+              id: targetInvoice.fiscalAddonSubscriptionId,
+              status: 'ACTIVE',
+            },
+            data: { status: 'PAST_DUE' },
+          });
+        }
       } else if (input.status === 'CANCELED') {
         await tx.subscriptionInvoice.update({
           where: { id: targetInvoice.id },

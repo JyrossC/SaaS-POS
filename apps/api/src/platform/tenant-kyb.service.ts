@@ -249,6 +249,95 @@ export class TenantKybService implements OnModuleInit, OnModuleDestroy {
     documentName: string,
     file: UploadedKybFile,
   ): Promise<KybDocumentMetadata> {
+    return this.storeDocument(
+      tenantId,
+      { type: 'platform', platformAdminId },
+      documentName,
+      file,
+    );
+  }
+
+  async uploadForTenantOwner(
+    tenantId: string,
+    membershipId: string,
+    userId: string,
+    documentName: string,
+    file: UploadedKybFile,
+  ): Promise<KybDocumentMetadata> {
+    return this.storeDocument(
+      tenantId,
+      { type: 'tenant-owner', membershipId, userId },
+      documentName,
+      file,
+    );
+  }
+
+  async getApplicantStatus(tenantId: string) {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: {
+        name: true,
+        slug: true,
+        status: true,
+        createdAt: true,
+        subscription: { select: { status: true } },
+        kybDocuments: {
+          select: {
+            id: true,
+            documentName: true,
+            originalFilename: true,
+            mimeType: true,
+            sizeBytes: true,
+            reviewStatus: true,
+            reviewNote: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+    if (!tenant) {
+      throw new NotFoundException('Tenant was not found.');
+    }
+
+    const rejectionEvent =
+      tenant.status === 'REJECTED'
+        ? await this.prisma.platformAuditLog.findFirst({
+            where: {
+              resource: 'tenant',
+              resourceId: tenantId,
+              action: 'platform.tenant.rejected',
+            },
+            select: { metadata: true },
+            orderBy: { createdAt: 'desc' },
+          })
+        : null;
+    const metadata = rejectionEvent?.metadata;
+    const rejectionReason =
+      metadata && typeof metadata === 'object' && !Array.isArray(metadata) &&
+      'reason' in metadata && typeof metadata.reason === 'string'
+        ? metadata.reason
+        : null;
+
+    return {
+      name: tenant.name,
+      slug: tenant.slug,
+      status: tenant.status,
+      submittedAt: tenant.createdAt,
+      subscriptionStatus: tenant.subscription?.status ?? null,
+      rejectionReason,
+      kybDocuments: tenant.kybDocuments,
+    };
+  }
+
+  private async storeDocument(
+    tenantId: string,
+    actor:
+      | { type: 'platform'; platformAdminId: string }
+      | { type: 'tenant-owner'; membershipId: string; userId: string },
+    documentName: string,
+    file: UploadedKybFile,
+  ): Promise<KybDocumentMetadata> {
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: tenantId },
       select: { id: true, status: true },
@@ -317,15 +406,29 @@ export class TenantKybService implements OnModuleInit, OnModuleDestroy {
           },
           select: this.documentMetadataSelect(),
         });
-        await transaction.platformAuditLog.create({
-          data: {
-            actorPlatformAdminId: platformAdminId,
-            action: 'platform.tenant.kyb_document_uploaded',
-            resource: 'tenant-kyb-document',
-            resourceId: created.id,
-            metadata: { tenantId, mimeType, sizeBytes: file.buffer.length },
-          },
-        });
+        if (actor.type === 'platform') {
+          await transaction.platformAuditLog.create({
+            data: {
+              actorPlatformAdminId: actor.platformAdminId,
+              action: 'platform.tenant.kyb_document_uploaded',
+              resource: 'tenant-kyb-document',
+              resourceId: created.id,
+              metadata: { tenantId, mimeType, sizeBytes: file.buffer.length },
+            },
+          });
+        } else {
+          await transaction.auditLog.create({
+            data: {
+              tenantId,
+              actorMembershipId: actor.membershipId,
+              actorUserId: actor.userId,
+              action: 'tenant.kyb_document_uploaded',
+              resource: 'tenant-kyb-document',
+              resourceId: created.id,
+              metadata: { mimeType, sizeBytes: file.buffer.length },
+            },
+          });
+        }
         return created;
       });
     } catch (error) {
@@ -482,6 +585,42 @@ export class TenantKybService implements OnModuleInit, OnModuleDestroy {
           resource: 'tenant',
           resourceId: tenant.id,
           metadata: { acceptedKybDocumentId: tenant.kybDocuments[0].id },
+        },
+      });
+    });
+  }
+
+  async rejectTenant(
+    tenantId: string,
+    platformAdminId: string,
+    reason: string,
+  ): Promise<void> {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { id: true, status: true },
+    });
+    if (!tenant) {
+      throw new NotFoundException('Tenant was not found.');
+    }
+    if (tenant.status !== 'PENDING_REVIEW') {
+      throw new ConflictException('Only tenants pending review can be rejected.');
+    }
+
+    await this.prisma.$transaction(async (transaction) => {
+      const result = await transaction.tenant.updateMany({
+        where: { id: tenant.id, status: 'PENDING_REVIEW' },
+        data: { status: 'REJECTED' },
+      });
+      if (result.count !== 1) {
+        throw new ConflictException('Tenant status changed before rejection was completed.');
+      }
+      await transaction.platformAuditLog.create({
+        data: {
+          actorPlatformAdminId: platformAdminId,
+          action: 'platform.tenant.rejected',
+          resource: 'tenant',
+          resourceId: tenant.id,
+          metadata: { reason: reason.trim() },
         },
       });
     });

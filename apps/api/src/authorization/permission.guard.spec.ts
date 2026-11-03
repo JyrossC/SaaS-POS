@@ -21,6 +21,7 @@ describe('PermissionGuard', () => {
             id: 'u-1',
             membershipId: 'm-1',
             tenantId: 'tenant-1',
+            tenantStatus: 'ACTIVE',
             email: 'admin@example.com',
             role: 'tenant_admin',
             roleNames: ['tenant_admin'],
@@ -48,6 +49,7 @@ describe('PermissionGuard', () => {
             id: 'u-1',
             membershipId: 'm-1',
             tenantId: 'tenant-1',
+            tenantStatus: 'ACTIVE',
             email: 'cashier@example.com',
             role: 'cashier',
             roleNames: ['cashier'],
@@ -77,5 +79,57 @@ describe('PermissionGuard', () => {
     Reflect.defineMetadata(REQUIRED_PERMISSIONS_KEY, ['dashboard.view'], handler);
 
     expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
+  });
+
+  it('blocks tenant operations for a pending tenant, even without permission metadata', () => {
+    const handler = {};
+    const context = {
+      getHandler: () => handler,
+      getClass: () => class TestController {},
+      switchToHttp: () => ({
+        getRequest: () => ({
+          user: {
+            id: 'u-1',
+            membershipId: 'm-1',
+            tenantId: 'tenant-1',
+            tenantStatus: 'PENDING_REVIEW',
+            email: 'owner@example.com',
+            role: 'Tenant Owner',
+            roleNames: ['Tenant Owner'],
+            permissions: [],
+            storeIds: [],
+            allStoreAccess: true,
+          },
+        }),
+      }),
+    } as unknown as ExecutionContext;
+
+    expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+  });
+
+  it('allows active tenant routes without explicit permission metadata', () => {
+    const handler = {};
+    const context = {
+      getHandler: () => handler,
+      getClass: () => class TestController {},
+      switchToHttp: () => ({
+        getRequest: () => ({
+          user: {
+            id: 'u-1',
+            membershipId: 'm-1',
+            tenantId: 'tenant-1',
+            tenantStatus: 'ACTIVE',
+            email: 'owner@example.com',
+            role: 'Tenant Owner',
+            roleNames: ['Tenant Owner'],
+            permissions: [],
+            storeIds: [],
+            allStoreAccess: true,
+          },
+        }),
+      }),
+    } as unknown as ExecutionContext;
+
+    expect(guard.canActivate(context)).toBe(true);
   });
 });

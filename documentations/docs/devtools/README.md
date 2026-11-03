@@ -17,7 +17,7 @@ This project is expected to run as a modern web platform with a Node.js-based AP
 ## Recommended developer tooling
 
 - VS Code with ESLint, Prettier, Prisma, GitLens, and REST clients
-- Swagger UI for API exploration (`http://localhost:3000/api/v1/docs` in development; all 40 request bodies are documented, while explicit response schemas cover 12 operations so far)
+- Swagger UI for API exploration (`http://localhost:3000/api/v1/docs` in development; all 68 request bodies are documented, while explicit response schemas cover 57 operations so far)
 - Playwright or Cypress for end-to-end testing
 - Jest or Vitest for unit and integration tests
 - Grafana or a basic log viewer for monitoring

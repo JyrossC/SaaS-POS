@@ -10,6 +10,7 @@ import { AuthenticatedUser } from './auth.types';
 
 export interface RequestWithUser extends Request {
   user?: AuthenticatedUser;
+  authSessionId?: string;
 }
 
 @Injectable()
@@ -32,7 +33,7 @@ export class AuthGuard implements CanActivate {
     const token = match[1];
 
     // Verify signature and structure (synchronous)
-    let payload: { sub: string; membershipId: string };
+    let payload: { sub: string; membershipId: string; sessionId: string };
     try {
       const verified = this.authService.verifyTokenSilent(token);
       if (!verified) {
@@ -49,7 +50,11 @@ export class AuthGuard implements CanActivate {
     if (isRevoked) {
       throw new UnauthorizedException('Token has been revoked. Please sign in again.');
     }
+    if (!(await this.authService.isSessionActive(payload.sessionId, payload.sub))) {
+      throw new UnauthorizedException('Session has expired or been revoked. Please sign in again.');
+    }
 
+    request.authSessionId = payload.sessionId;
     request.user = await this.authService.resolvePrincipal(
       payload.sub,
       payload.membershipId,

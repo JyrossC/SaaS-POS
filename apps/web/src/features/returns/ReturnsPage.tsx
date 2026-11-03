@@ -6,8 +6,9 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { LoadingState } from '../../components/ui/LoadingState';
 import { ErrorState } from '../../components/ui/ErrorState';
 import { Badge } from '../../components/ui/Badge';
-import { useSales, useCreateReturn } from '../../hooks/api';
+import { useSales, useCreateReturn, useReturns } from '../../hooks/api';
 import { toast } from 'react-hot-toast';
+import { formatBusinessDate, formatTzs } from '../../lib/formatters';
 
 interface ReturnItemInput {
   saleItemId: string;
@@ -18,7 +19,11 @@ interface ReturnItemInput {
 }
 
 export function ReturnsPage() {
-  const { data: sales, isLoading } = useSales();
+  const { data: sales, isLoading, isError: salesError, error: salesErrorValue } = useSales({ page: 1, pageSize: 100 });
+  const { data: returns, isLoading: returnsLoading, isError: returnsError, error: returnsErrorValue } = useReturns({
+    page: 1,
+    pageSize: 25,
+  });
   const createReturn = useCreateReturn();
 
   const [saleId, setSaleId] = useState('');
@@ -26,9 +31,12 @@ export function ReturnsPage() {
   const [items, setItems] = useState<ReturnItemInput[]>([]);
   const [selectedSaleItems, setSelectedSaleItems] = useState<any[]>([]);
 
-  const handleAddItem = () => {
+  const handleAddItem = (newItem: any) => {
     if (!selectedSaleItems.length) return;
-    const newItem = selectedSaleItems[0];
+    if (items.some((item) => item.saleItemId === newItem.id)) {
+      toast.error('This item is already in the return.');
+      return;
+    }
     setItems([...items, {
       saleItemId: newItem.id,
       productName: newItem.product?.name || 'Unknown',
@@ -52,9 +60,9 @@ export function ReturnsPage() {
   const handleSaleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = e.target.value;
     setSaleId(id);
+    setItems([]);
     if (!id) {
       setSelectedSaleItems([]);
-      setItems([]);
       return;
     }
     const sale = sales?.items.find((s: any) => s.id === id);
@@ -74,6 +82,13 @@ export function ReturnsPage() {
     }
     if (items.length === 0) {
       toast.error('Please add at least one item to return');
+      return;
+    }
+    if (items.some((item) => {
+      const quantity = Number(item.quantity);
+      return !Number.isFinite(quantity) || quantity <= 0 || quantity > item.maxQuantity;
+    })) {
+      toast.error('Each return quantity must be positive and no greater than the remaining quantity.');
       return;
     }
     if (!reason) {
@@ -99,7 +114,16 @@ export function ReturnsPage() {
     }
   };
 
-  if (isLoading) return <LoadingState message="Loading returns..." />;
+  if (isLoading || returnsLoading) return <LoadingState message="Loading returns..." />;
+  if (salesError || returnsError) {
+    const requestError = salesErrorValue ?? returnsErrorValue;
+    return (
+      <ErrorState
+        title="Could not load returns"
+        description={requestError instanceof Error ? requestError.message : 'Try again in a moment.'}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -117,9 +141,9 @@ export function ReturnsPage() {
               className="input w-full"
             >
                 <option value="">Select a sale</option>
-                {sales?.items.map((s: any) => (
+                {sales?.items.filter((sale: any) => sale.status === 'COMPLETED').map((s: any) => (
                   <option key={s.id} value={s.id}>
-                    {s.saleNumber} - {s.store?.name || 'Unknown Store'} - {new Date(s.createdAt).toLocaleDateString()}
+                    {s.saleNumber} - {s.store?.name || 'Unknown Store'} - {formatBusinessDate(s.createdAt)}
                   </option>
                 ))}
               </select>
@@ -159,7 +183,8 @@ export function ReturnsPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleAddItem()}
+                              type="button"
+                              onClick={() => handleAddItem(si)}
                               disabled={remaining <= 0}
                             >
                               Add to Return
@@ -179,11 +204,6 @@ export function ReturnsPage() {
                 {items.map((item, index) => (
                   <div key={index} className="flex gap-3 items-start mb-3">
                     <Input
-                      label="Sale Item ID"
-                      value={item.saleItemId}
-                      className="w-48"
-                    />
-                    <Input
                       label="SKU"
                       value={item.sku}
                       className="w-40"
@@ -198,13 +218,14 @@ export function ReturnsPage() {
                       type="number"
                       min="0.0001"
                       step="0.0001"
+                      max={item.maxQuantity}
                       value={item.quantity}
                       onChange={(e) => handleQuantityChange(index, e.target.value)}
                       required
                       className="w-24"
                     />
                     <span className="text-body-sm text-muted ml-2">max {item.maxQuantity}</span>
-                    <Button variant="danger" size="sm" onClick={() => handleRemoveItem(index)} disabled={items.length === 1}>
+                    <Button type="button" variant="danger" size="sm" onClick={() => handleRemoveItem(index)} disabled={items.length === 1}>
                       Remove
                     </Button>
                   </div>
@@ -220,8 +241,28 @@ export function ReturnsPage() {
 
         <Card className="col-span-1 lg:col-span-1 p-6 h-full">
           <h2 className="text-heading-h4 text-primary mb-6">Return History</h2>
-          {/* Returns history would be loaded from a separate endpoint; showing empty state for now */}
-          <EmptyState title="No returns" description="Process your first return." />
+          {!returns?.items.length ? (
+            <EmptyState title="No returns" description="Processed refunds will appear here." />
+          ) : (
+            <div className="table-scroll">
+              <table className="table w-full">
+                <thead>
+                  <tr><th>Refund</th><th>Sale</th><th>Processed</th><th>Amount</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                  {returns.items.map((refund: any) => (
+                    <tr key={refund.id}>
+                      <td className="font-mono">{refund.refundNumber}</td>
+                      <td>{refund.sale?.saleNumber ?? '—'}</td>
+                      <td>{formatBusinessDate(refund.createdAt)}</td>
+                      <td className="font-mono tabular-nums">{formatTzs(refund.totalAmount)}</td>
+                      <td><Badge variant={refund.status === 'COMPLETED' ? 'success' : 'warning'}>{refund.status}</Badge></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Card>
       </div>
     </div>

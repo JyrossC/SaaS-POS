@@ -1,17 +1,22 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../components/auth/AuthProvider';
+import { Link } from 'react-router-dom';
 import { apiClient } from '../../lib/api-client';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 
-interface RegisterProps {
-  onRegister?: (token: string, user: any) => void;
+interface RegistrationForm {
+  tenantName: string;
+  tenantSlug: string;
+  businessType: 'RETAIL' | 'PHARMACY' | 'HYBRID';
+  ownerName: string;
+  ownerEmail: string;
+  password: string;
+  planCode: 'STARTER' | 'GROWTH' | 'BUSINESS';
 }
 
-export function RegisterPage({ onRegister }: RegisterProps) {
-  const [form, setForm] = useState({
+export function RegisterPage() {
+  const [form, setForm] = useState<RegistrationForm>({
     tenantName: '',
     tenantSlug: '',
     businessType: 'RETAIL',
@@ -23,12 +28,15 @@ export function RegisterPage({ onRegister }: RegisterProps) {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const { login } = useAuth();
+  const [submitted, setSubmitted] = useState(false);
+  const [verificationDeliveryFailed, setVerificationDeliveryFailed] = useState(false);
 
-  const handleChange = (field: string, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    // Clear field error when user starts typing
+  const handleChange = <K extends keyof RegistrationForm>(field: K, value: RegistrationForm[K]) => {
+    const normalizedValue = field === 'tenantSlug' && typeof value === 'string'
+      ? value.toLowerCase()
+      : value;
+    setForm((prev) => ({ ...prev, [field]: normalizedValue }));
+    setError('');
     if (fieldErrors[field]) {
       setFieldErrors((prev) => { const next = { ...prev }; delete next[field]; return next; });
     }
@@ -41,36 +49,59 @@ export function RegisterPage({ onRegister }: RegisterProps) {
     setFieldErrors({});
 
     try {
-      const response = await apiClient.post<{ accessToken: string; user: any }>(
+      const response = await apiClient.post<{ status: 'PENDING_REVIEW'; message: string }>(
         '/auth/register',
         form,
       );
 
       if (response.success && response.data) {
-        const { accessToken, user } = response.data;
-        apiClient.setToken(accessToken);
-        login(accessToken, user);
-        onRegister?.(accessToken, user);
-        navigate('/app/dashboard', { replace: true });
+        setSubmitted(true);
       } else {
-        const details = response.error?.details;
-        if (Array.isArray(details) && details.length > 0) {
-          const next: Record<string, string> = {};
-          details.forEach((d: any) => {
-            if (d.field) next[d.field] = d.message;
-          });
+        if ((response.error?.status ?? 0) >= 500) {
+          setVerificationDeliveryFailed(true);
+          setSubmitted(true);
+          return;
+        }
+        const details = response.error?.details ?? [];
+        const next: Record<string, string> = {};
+        details.forEach((detail) => {
+          if (detail.field && detail.message) next[detail.field] = detail.message;
+        });
+        if (Object.keys(next).length > 0) {
           setFieldErrors(next);
-          setError((details[0] as any)?.message || 'Registration failed');
+          setError('Please correct the highlighted fields and submit again.');
         } else {
           setError(response.error?.message || 'Registration failed');
         }
       }
-    } catch (requestError: any) {
+    } catch (requestError: unknown) {
       setError(requestError instanceof Error ? requestError.message : 'Registration request failed');
     } finally {
       setLoading(false);
     }
   };
+
+  if (submitted) {
+    return (
+      <Card className="p-6 max-w-md mx-auto mt-6">
+        <div className="text-center">
+          <h1 className="text-heading-h2 text-primary">Registration submitted</h1>
+          {verificationDeliveryFailed ? (
+            <p className="text-body-sm text-muted mt-4">
+              Your application was created, but we could not deliver the verification email. Once email delivery is available, use the sign-in page to request a new verification link before signing in.
+            </p>
+          ) : (
+            <p className="text-body-sm text-muted mt-4">
+              Your tenant is pending platform review. Verify your email address before signing in with your tenant slug and owner credentials to upload the required documents and check your application status.
+            </p>
+          )}
+          <Link to="/login" className="inline-block mt-6 text-brand text-sm font-medium hover:underline">
+            Go to sign in
+          </Link>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6 max-w-md mx-auto mt-6">
@@ -80,7 +111,7 @@ export function RegisterPage({ onRegister }: RegisterProps) {
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-danger text-inverse text-sm rounded-md">
+        <div role="alert" className="mb-4 p-3 bg-danger text-inverse text-sm rounded-md">
           {error}
         </div>
       )}
@@ -91,6 +122,9 @@ export function RegisterPage({ onRegister }: RegisterProps) {
           placeholder="e.g. Acme Retail"
           value={form.tenantName}
           onChange={(e) => handleChange('tenantName', e.target.value)}
+          minLength={2}
+          maxLength={120}
+          autoComplete="organization"
           required
           error={fieldErrors.tenantName}
         />
@@ -99,18 +133,23 @@ export function RegisterPage({ onRegister }: RegisterProps) {
           placeholder="e.g. acme-retail"
           value={form.tenantSlug}
           onChange={(e) => handleChange('tenantSlug', e.target.value)}
+          minLength={2}
+          maxLength={60}
+          pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+          autoCapitalize="none"
           required
           error={fieldErrors.tenantSlug}
         />
         <p className="text-caption text-muted">
-          Lowercase letters, numbers, and hyphens only (e.g. acme-retail)
+          Lowercase letters, numbers, and single hyphens only (2–60 characters, e.g. acme-retail).
         </p>
         <div className="form-field">
           <label className="block text-label-md text-secondary mb-1">Business Type</label>
           <select
             className="input"
             value={form.businessType}
-            onChange={(e) => handleChange('businessType', e.target.value)}
+            onChange={(e) => handleChange('businessType', e.target.value as RegistrationForm['businessType'])}
+            required
           >
             <option value="RETAIL">Retail</option>
             <option value="PHARMACY">Pharmacy</option>
@@ -122,6 +161,9 @@ export function RegisterPage({ onRegister }: RegisterProps) {
           placeholder="e.g. Jane Smith"
           value={form.ownerName}
           onChange={(e) => handleChange('ownerName', e.target.value)}
+          minLength={2}
+          maxLength={120}
+          autoComplete="name"
           required
           error={fieldErrors.ownerName}
         />
@@ -131,6 +173,7 @@ export function RegisterPage({ onRegister }: RegisterProps) {
           placeholder="jane@acme.com"
           value={form.ownerEmail}
           onChange={(e) => handleChange('ownerEmail', e.target.value)}
+          autoComplete="email"
           required
           error={fieldErrors.ownerEmail}
         />
@@ -140,18 +183,22 @@ export function RegisterPage({ onRegister }: RegisterProps) {
           placeholder="••••••••"
           value={form.password}
           onChange={(e) => handleChange('password', e.target.value)}
+          minLength={12}
+          maxLength={128}
+          autoComplete="new-password"
           required
           error={fieldErrors.password}
         />
         <p className="text-caption text-muted">
-          Must be at least 12 characters
+          Use 12–128 characters.
         </p>
         <div className="form-field">
           <label className="block text-label-md text-secondary mb-1">Subscription Plan</label>
           <select
             className="input"
             value={form.planCode}
-            onChange={(e) => handleChange('planCode', e.target.value)}
+            onChange={(e) => handleChange('planCode', e.target.value as RegistrationForm['planCode'])}
+            required
           >
             <option value="STARTER">Starter</option>
             <option value="GROWTH">Growth</option>

@@ -55,6 +55,8 @@ const permissions = [
   ['campaigns.create', 'Create sales campaigns'],
   ['campaigns.update', 'Update sales campaigns'],
   ['campaigns.delete', 'Delete sales campaigns'],
+  ['fiscal_settings.view', 'View fiscal integration configuration'],
+  ['fiscal_settings.update', 'Manage tenant fiscal integration configuration'],
 ];
 
 const platformModules = [

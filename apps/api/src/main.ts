@@ -17,7 +17,41 @@ loadEnvironmentFile({ path: resolve(__dirname, '../../../.env') });
 const environmentSchema = Joi.object({
   DATABASE_URL: Joi.string().uri({ scheme: ['postgres', 'postgresql'] }).required(),
   JWT_SECRET: Joi.string().min(32).required(),
+  MFA_ENCRYPTION_KEY: Joi.string().min(32).when('NODE_ENV', {
+    is: 'production',
+    then: Joi.required(),
+    otherwise: Joi.optional().allow(''),
+  }),
   INSTALLATION_SECRET: Joi.string().min(32).required(),
+  APP_URL: Joi.when('NODE_ENV', {
+    is: 'production',
+    then: Joi.string().uri({ scheme: ['http', 'https'] }).required(),
+    otherwise: Joi.string()
+      .uri({ scheme: ['http', 'https'] })
+      .default('http://localhost:5173'),
+  }),
+  SMTP_HOST: Joi.string().trim().min(1).when('NODE_ENV', {
+    is: 'production',
+    then: Joi.required(),
+    otherwise: Joi.optional().allow(''),
+  }),
+  SMTP_PORT: Joi.number().integer().min(1).max(65535).default(587),
+  SMTP_SECURE: Joi.boolean().default(false),
+  SMTP_USER: Joi.string().when('NODE_ENV', {
+    is: 'production',
+    then: Joi.required(),
+    otherwise: Joi.optional().allow(''),
+  }),
+  SMTP_PASSWORD: Joi.string().when('NODE_ENV', {
+    is: 'production',
+    then: Joi.required(),
+    otherwise: Joi.optional().allow(''),
+  }),
+  SMTP_FROM: Joi.string().email().when('NODE_ENV', {
+    is: 'production',
+    then: Joi.required(),
+    otherwise: Joi.optional().allow(''),
+  }),
   KYB_DOCUMENT_ENCRYPTION_KEY: Joi.string()
     .required()
     .custom((value: string, helpers) => {
@@ -30,6 +64,30 @@ const environmentSchema = Joi.object({
     .messages({
       'any.invalid': 'KYB_DOCUMENT_ENCRYPTION_KEY must be a base64-encoded 32-byte key.',
     }),
+  FISCAL_CREDENTIAL_ENCRYPTION_KEY: Joi.string()
+    .allow('')
+    .optional()
+    .custom((value: string, helpers) => {
+      if (!value) return value;
+      const key = Buffer.from(value, 'base64');
+      if (key.length !== 32 || key.toString('base64') !== value) {
+        return helpers.error('any.invalid');
+      }
+      return value;
+    })
+    .messages({
+      'any.invalid': 'FISCAL_CREDENTIAL_ENCRYPTION_KEY must be a base64-encoded 32-byte key.',
+    }),
+  FISCAL_SIMULATOR_ENABLED: Joi.boolean().when('NODE_ENV', {
+    is: 'production',
+    then: Joi.boolean().valid(false).default(false),
+    otherwise: Joi.boolean().default(false),
+  }),
+  FISCAL_ADDON_TEST_BILLING_ENABLED: Joi.boolean().when('NODE_ENV', {
+    is: 'production',
+    then: Joi.boolean().valid(false).default(false),
+    otherwise: Joi.boolean().default(false),
+  }),
   JWT_EXPIRES_IN: Joi.string().pattern(/^[1-9]\d*(s|m|h|d)$/).default('15m'),
   CORS_ORIGINS: Joi.string().default('http://localhost:5173'),
   PORT: Joi.number().integer().min(1).max(65535).default(3000),
@@ -38,6 +96,7 @@ const environmentSchema = Joi.object({
   RATE_LIMIT_WINDOW_MS: Joi.number().integer().min(1000).default(900000),
   RATE_LIMIT_MAX: Joi.number().integer().min(1).default(100),
   LOGIN_RATE_LIMIT_MAX: Joi.number().integer().min(1).default(10),
+  PASSWORD_RESET_RATE_LIMIT_MAX: Joi.number().integer().min(1).default(5),
 }).unknown(true);
 
 async function bootstrap() {
@@ -83,13 +142,36 @@ async function bootstrap() {
     origin: environment.CORS_ORIGINS.split(',').map((origin: string) => origin.trim()),
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Installation-Secret', 'X-Signature'],
-    credentials: false,
+    credentials: true,
     maxAge: 86400,
   });
 
   // Capture raw body for webhook signature verification on payment webhook routes
   // Must come BEFORE json middleware so webhook bodies stay as raw Buffer
   app.use('/api/v1/platform/payment-providers/:provider/webhook', express.raw({ type: '*/*' }));
+
+  const authRateLimit = (max: number) =>
+    rateLimit({
+      windowMs: environment.RATE_LIMIT_WINDOW_MS,
+      max,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: 'Too many requests, please try again later.' },
+    });
+  app.use('/api/v1/auth/login', authRateLimit(environment.LOGIN_RATE_LIMIT_MAX));
+  app.use('/api/v1/platform/auth/login', authRateLimit(environment.LOGIN_RATE_LIMIT_MAX));
+  app.use(
+    '/api/v1/auth/email/verification/resend',
+    authRateLimit(environment.PASSWORD_RESET_RATE_LIMIT_MAX),
+  );
+  app.use(
+    '/api/v1/auth/password/forgot',
+    authRateLimit(environment.PASSWORD_RESET_RATE_LIMIT_MAX),
+  );
+  app.use(
+    '/api/v1/auth/password/reset',
+    authRateLimit(environment.PASSWORD_RESET_RATE_LIMIT_MAX),
+  );
 
   // Request size limits
   app.use(express.json({ limit: '100kb' }));

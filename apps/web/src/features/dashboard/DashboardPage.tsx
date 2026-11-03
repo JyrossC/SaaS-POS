@@ -1,20 +1,14 @@
-import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { LoadingState } from '../../components/ui/LoadingState';
 import { ErrorState } from '../../components/ui/ErrorState';
+import { formatTzs } from '../../lib/formatters';
 import {
   useSalesSummary,
   useInventoryReport,
 } from '../../hooks/api';
-
-interface DashboardStats {
-  totalSales: number;
-  totalRevenue: string;
-  totalProducts: number;
-  lowStockItems: number;
-}
 
 export function DashboardPage() {
   const { data: salesSummary, isLoading: salesLoading } = useSalesSummary();
@@ -29,7 +23,7 @@ export function DashboardPage() {
 
   if (loading) return <LoadingState message="Loading dashboard..." />;
 
-  const recentSales = salesSummary?.topProducts || [];
+  const topProducts = salesSummary?.topProducts || [];
   const lowStockAlerts = inventoryReport?.lowStockItems || [];
 
   return (
@@ -46,11 +40,11 @@ export function DashboardPage() {
         </Card>
         <Card className="p-4">
           <div className="text-label-sm text-muted">Total Revenue</div>
-          <div className="text-heading-h2 text-primary">{totalRevenue}</div>
+          <div className="text-heading-h2 text-primary font-mono tabular-nums">{formatTzs(totalRevenue)}</div>
         </Card>
         <Card className="p-4">
           <div className="text-label-sm text-muted">Avg Order Value</div>
-          <div className="text-heading-h2 text-primary">{averageOrderValue}</div>
+          <div className="text-heading-h2 text-primary font-mono tabular-nums">{formatTzs(averageOrderValue)}</div>
         </Card>
         <Card className="p-4">
           <div className="text-label-sm text-muted">Low Stock</div>
@@ -65,15 +59,13 @@ export function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="col-span-2 lg:col-span-2 h-80 flex flex-col">
-          <h2 className="text-heading-h4 text-primary mb-4">Recent Sales</h2>
-          {recentSales.length === 0 ? (
+          <h2 className="text-heading-h4 text-primary mb-4">Top Products</h2>
+          {topProducts.length === 0 ? (
             <EmptyState
-              title="No recent sales"
-              description="Start processing sales to see activity here."
+              title="No product sales in this period"
+              description="Completed product sales will appear here."
               action={
-                <button className="btn btn-primary btn-md">
-                  Create Sale
-                </button>
+                <Link className="btn btn-primary btn-md" to="/app/sales">Open sales</Link>
               }
             />
           ) : (
@@ -86,11 +78,11 @@ export function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentSales.slice(0, 10).map((p: any) => (
+                  {topProducts.slice(0, 10).map((p: any) => (
                     <tr key={p.name || p.id}>
                       <td className="font-mono text-sm">{p.name || 'Unknown Product'}</td>
                       <td className="text-right font-mono tabular-nums text-sm">
-                        {parseFloat(p.revenue || '0').toFixed(2)}
+                        {formatTzs(p.revenue)}
                       </td>
                     </tr>
                   ))}

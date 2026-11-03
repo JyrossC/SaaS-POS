@@ -24,7 +24,11 @@ export class PlatformAuthGuard implements CanActivate {
       throw new UnauthorizedException('Malformed platform authentication token.');
     }
 
-    const adminId = this.platformAuthService.verifyToken(match[1]);
+    const { adminId, sessionId } = this.platformAuthService.verifyToken(match[1]);
+    if (!(await this.platformAuthService.isSessionActive(sessionId, adminId))) {
+      throw new UnauthorizedException('Platform session has expired or been revoked.');
+    }
+    request.authSessionId = sessionId;
     request.platformAdmin = await this.platformAuthService.resolvePrincipal(adminId);
     return true;
   }

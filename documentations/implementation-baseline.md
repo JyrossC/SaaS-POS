@@ -60,7 +60,7 @@ This keeps the foundation correct before introducing synchronization strategies.
 - Helmet
 - Argon2id password hashing
 - JWT or secure session model
-- OpenAPI/Swagger generation (79 paths / 99 operations and all 40 request bodies are documented; 12 operations have explicit response schemas, and remaining response contracts are incomplete)
+- OpenAPI/Swagger generation (126 paths / 151 operations and all 68 request bodies are documented; 57 operations have explicit response schemas, and remaining response contracts are incomplete)
 - structured logging
 - background job queue as needed
 

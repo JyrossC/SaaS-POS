@@ -2,6 +2,7 @@ import {
   useQuery,
   useMutation,
   useQueryClient,
+  QueryClient,
 } from '@tanstack/react-query';
 import { apiClient, ApiResponse } from '../lib/api-client';
 
@@ -23,6 +24,19 @@ const mutationFn = <T, V>(fn: (variables: V) => Promise<ApiResponse<T>>) => asyn
   return response.data!;
 };
 
+function invalidateRetailQueries(queryClient: QueryClient) {
+  for (const queryKey of [
+    ['sales'],
+    ['store-inventory'],
+    ['inventory-report'],
+    ['sales-summary'],
+    ['store-comparison'],
+    ['cash-sessions'],
+  ]) {
+    void queryClient.invalidateQueries({ queryKey });
+  }
+}
+
 // --- Auth hooks ---
 export function useLogin() {
   return useMutation({
@@ -39,9 +53,10 @@ export function useRegisterTenant() {
 }
 
 // --- Products hooks ---
-export function useProducts(params?: { search?: string; page?: number; pageSize?: number }) {
+export function useProducts(params?: { search?: string; page?: number; pageSize?: number }, enabled = true) {
   return useQuery({
     queryKey: ['products', params],
+    enabled,
     queryFn: queryFn(() =>
       apiClient.get<{ items: any[]; total: number }>('/products', {
         params: params as any,
@@ -79,7 +94,7 @@ export function useCreateSale() {
     mutationFn: mutationFn((body: any) =>
       apiClient.post<{ id: string; saleNumber: string }>('/sales', body)),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      invalidateRetailQueries(queryClient);
     },
   });
 }
@@ -90,7 +105,7 @@ export function useVoidSale() {
     mutationFn: mutationFn(({ saleId, reason }: { saleId: string; reason: string }) =>
       apiClient.post(`/sales/${saleId}/void`, { reason })),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      invalidateRetailQueries(queryClient);
     },
   });
 }
@@ -159,6 +174,7 @@ export function useReceiveGoods() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goods-receipts'] });
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      invalidateRetailQueries(queryClient);
     },
   });
 }
@@ -175,9 +191,10 @@ export function useCashSessions(params?: { storeId?: string; status?: string; pa
   });
 }
 
-export function useStores(params?: { search?: string; status?: string; page?: number; pageSize?: number }) {
+export function useStores(params?: { search?: string; status?: string; page?: number; pageSize?: number }, enabled = true) {
   return useQuery({
     queryKey: ['stores', params],
+    enabled,
     queryFn: queryFn(() =>
       apiClient.get<{ items: any[]; total: number }>('/stores', {
         params: params as any,
@@ -193,6 +210,119 @@ export function useCreateStore() {
       apiClient.post<{ id: string; name: string; code: string }>('/stores', body)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stores'] });
+    },
+  });
+}
+
+export function useUpdateStore() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: mutationFn(({ storeId, body }: {
+      storeId: string;
+      body: { name?: string; code?: string; location?: string | null; status?: 'ACTIVE' | 'INACTIVE' };
+    }) => apiClient.patch(`/stores/${storeId}`, body)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stores'] });
+    },
+  });
+}
+
+export interface TenantRole {
+  id: string;
+  name: string;
+  description: string | null;
+  isSystem: boolean;
+  permissions: Array<{ permission: { code: string } }>;
+  _count?: { memberships: number; invitations: number };
+}
+
+export interface AssignablePermission {
+  code: string;
+  description: string | null;
+}
+
+export function useTenantRoles() {
+  return useQuery({
+    queryKey: ['tenant-roles'],
+    queryFn: queryFn(() => apiClient.get<TenantRole[]>('/tenant/roles')),
+  });
+}
+
+export function useAssignablePermissions() {
+  return useQuery({
+    queryKey: ['assignable-permissions'],
+    queryFn: queryFn(() => apiClient.get<AssignablePermission[]>('/tenant/permissions')),
+  });
+}
+
+export function useCreateTenantRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: mutationFn((body: {
+      name: string;
+      description: string | null;
+      permissionCodes: string[];
+    }) => apiClient.post<TenantRole>('/tenant/roles', body)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenant-roles'] });
+    },
+  });
+}
+
+export function useUpdateTenantRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: mutationFn(({ roleId, body }: {
+      roleId: string;
+      body: {
+        name?: string;
+        description?: string | null;
+        permissionCodes?: string[];
+      };
+    }) => apiClient.patch<TenantRole>(`/tenant/roles/${encodeURIComponent(roleId)}`, body)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenant-roles'] });
+    },
+  });
+}
+
+export function useStoreInventory(storeId: string) {
+  return useQuery({
+    queryKey: ['store-inventory', storeId],
+    enabled: Boolean(storeId),
+    queryFn: queryFn(() =>
+      apiClient.get<Array<{
+        id: string;
+        quantityOnHand: string;
+        product: { id: string; sku: string; name: string; baseUnit: string };
+      }>>(`/stores/${encodeURIComponent(storeId)}/inventory`),
+    ),
+  });
+}
+
+export function useAdjustStock() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: mutationFn<unknown, {
+      storeId: string;
+      productId: string;
+      quantityDelta: string;
+      reason: string;
+      idempotencyKey: string;
+    }>(({
+      storeId,
+      productId,
+      quantityDelta,
+      reason,
+      idempotencyKey,
+    }) => apiClient.post(
+      `/stores/${encodeURIComponent(storeId)}/inventory/stock-adjustments`,
+      { productId, quantityDelta, reason },
+      { headers: { 'Idempotency-Key': idempotencyKey } },
+    )),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['store-inventory', variables.storeId] });
+      invalidateRetailQueries(queryClient);
     },
   });
 }
@@ -238,7 +368,7 @@ export function useCreateReturn() {
       apiClient.post<{ id: string; refundNumber: string }>('/returns', body)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['returns'] });
-      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      invalidateRetailQueries(queryClient);
     },
   });
 }
@@ -248,9 +378,43 @@ export function useBatches(params?: { productId?: string }) {
   return useQuery({
     queryKey: ['batches', params],
     queryFn: queryFn(() =>
-      apiClient.get<{ id: string; batchNumber: string; expiresAt: string; quantityReceived: string }[]>('/pharmacy/batches', {
+      apiClient.get<Array<{
+        id: string;
+        productId: string;
+        batchNumber: string;
+        expiresAt: string;
+        quantityReceived: string;
+        product: { id: string; sku: string; name: string; baseUnit: string };
+        inventory: Array<{
+          storeId: string;
+          quantityOnHand: string;
+          store: { id: string; name: string; code: string };
+        }>;
+      }>>('/pharmacy/batches', {
         params: params as any,
       }),
+    ),
+  });
+}
+
+export function useActiveQuarantines() {
+  return useQuery({
+    queryKey: ['active-quarantines'],
+    queryFn: queryFn(() =>
+      apiClient.get<Array<{
+        id: string;
+        storeId: string;
+        quantity: string;
+        reason: string;
+        createdAt: string;
+        store: { id: string; name: string; code: string };
+        batch: {
+          id: string;
+          batchNumber: string;
+          expiresAt: string;
+          product: { id: string; sku: string; name: string; baseUnit: string };
+        };
+      }>>('/pharmacy/quarantine'),
     ),
   });
 }
@@ -274,7 +438,8 @@ export function useCreateBatch() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['batches'] });
       queryClient.invalidateQueries({ queryKey: ['expiring-batches'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory-report'] });
+      invalidateRetailQueries(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['active-quarantines'] });
     },
   });
 }
@@ -287,7 +452,8 @@ export function useDispense() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['batches'] });
       queryClient.invalidateQueries({ queryKey: ['expiring-batches'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory-report'] });
+      invalidateRetailQueries(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['active-quarantines'] });
     },
   });
 }
@@ -300,7 +466,8 @@ export function useQuarantineStock() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['batches'] });
       queryClient.invalidateQueries({ queryKey: ['expiring-batches'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory-report'] });
+      invalidateRetailQueries(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['active-quarantines'] });
     },
   });
 }
@@ -313,7 +480,8 @@ export function useReleaseQuarantine() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['batches'] });
       queryClient.invalidateQueries({ queryKey: ['expiring-batches'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory-report'] });
+      invalidateRetailQueries(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['active-quarantines'] });
     },
   });
 }

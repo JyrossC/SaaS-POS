@@ -1,18 +1,23 @@
 interface TopbarProps {
   tenantName?: string;
   userName?: string;
+  onMenuToggle: () => void;
   onLogout: () => void;
 }
 
-export function Topbar({ tenantName, userName, onLogout }: TopbarProps) {
+export function Topbar({ tenantName, userName, onMenuToggle, onLogout }: TopbarProps) {
   return (
     <header className="topbar bg-surface border-b border-default flex items-center justify-between px-4">
       <div className="flex items-center gap-4">
+        <button type="button" className="menu-toggle" onClick={onMenuToggle} aria-label="Open navigation">
+          <span aria-hidden="true">☰</span>
+        </button>
         <span className="text-title-md font-bold text-primary">{tenantName}</span>
       </div>
       <div className="flex items-center gap-4">
         <span className="hidden sm:block text-body-sm text-secondary">{userName}</span>
         <button
+          type="button"
           onClick={onLogout}
           className="text-sm font-medium text-danger hover:bg-danger hover:text-inverse px-3 py-2 rounded-md transition-colors"
         >

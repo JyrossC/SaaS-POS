@@ -9,7 +9,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { access, mkdir, open } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { PrismaService } from '../database/prisma.service';
-import { InstallationRequest } from './platform.types';
+import { InstallationRequest, PlatformTenantListQuery } from './platform.types';
 
 @Injectable()
 export class PlatformService {
@@ -109,6 +109,116 @@ export class PlatformService {
       totalProducts: products,
       totalSales: sales,
       totalRevenue: Number(revenue._sum.totalAmount ?? 0),
+    };
+  }
+
+  async listTenants(query: PlatformTenantListQuery) {
+    const where = {
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.search
+        ? {
+            OR: [
+              { name: { contains: query.search, mode: 'insensitive' as const } },
+              { slug: { contains: query.search, mode: 'insensitive' as const } },
+              {
+                memberships: {
+                  some: {
+                    user: {
+                      email: { contains: query.search, mode: 'insensitive' as const },
+                    },
+                  },
+                },
+              },
+            ],
+          }
+        : {}),
+    };
+
+    const [tenants, total] = await this.prisma.$transaction([
+      this.prisma.tenant.findMany({
+        where,
+        skip: (query.page - 1) * query.pageSize,
+        take: query.pageSize,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          businessType: true,
+          status: true,
+          createdAt: true,
+          memberships: {
+            where: { status: { in: ['ACTIVE', 'INVITED'] } },
+            select: {
+              status: true,
+              user: { select: { name: true, email: true } },
+            },
+            orderBy: { createdAt: 'asc' },
+          },
+          subscription: {
+            select: {
+              status: true,
+              planVersion: {
+                select: {
+                  version: true,
+                  plan: { select: { code: true, name: true } },
+                },
+              },
+            },
+          },
+          kybDocuments: {
+            select: {
+              id: true,
+              documentName: true,
+              originalFilename: true,
+              mimeType: true,
+              sizeBytes: true,
+              reviewStatus: true,
+              reviewNote: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: 'desc' },
+          },
+        },
+      }),
+      this.prisma.tenant.count({ where }),
+    ]);
+
+    const tenantIds = tenants.map(({ id }) => id);
+    const reviewEvents = tenantIds.length
+      ? await this.prisma.platformAuditLog.findMany({
+          where: {
+            resource: 'tenant',
+            resourceId: { in: tenantIds },
+            action: { in: ['platform.tenant.approved', 'platform.tenant.rejected'] },
+          },
+          select: {
+            resourceId: true,
+            action: true,
+            metadata: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        })
+      : [];
+    const eventsByTenant = new Map<string, typeof reviewEvents>();
+    for (const event of reviewEvents) {
+      if (!event.resourceId) {
+        continue;
+      }
+      const events = eventsByTenant.get(event.resourceId) ?? [];
+      events.push(event);
+      eventsByTenant.set(event.resourceId, events);
+    }
+
+    return {
+      items: tenants.map((tenant) => ({
+        ...tenant,
+        reviewEvents: eventsByTenant.get(tenant.id) ?? [],
+      })),
+      total,
+      page: query.page,
+      pageSize: query.pageSize,
     };
   }
 

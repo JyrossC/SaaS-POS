@@ -1,561 +1,765 @@
 # SaaS POS Cloud — Design Tokens & UI Behavior Standard
-
-**Document ID:** SEC-DS-001  
-**Version:** 1.0.0  
-**Status:** Design foundation  
-**Last updated:** 2026-10-27  
-**Figma file:** https://www.figma.com/design/UcUf20X4qLOlrf8BSIIyGz
-
-## 1. Purpose and design principles
-
-This standard defines the visual language and interaction rules for SaaS POS Cloud, a multi-tenant ecommerce management SaaS platform. The interface should feel premium, clear, trustworthy, calm, and efficient for all user.
-
-Principles:
-1. Clarity before decoration.
-2. Use semantic tokens rather than hard-coded component values.
-3. Make tenant and institution scope explicit.
-4. Accessible by default: keyboard support, visible focus, readable contrast.
-5. Define loading, empty, success, error, offline/stale, and forbidden states.
-6. Never present fabricated institutions, learners, grades, payments, or other operational records as real data.
-7. Never show an operation as saved until the server confirms persistence.
-
-## 2. Token architecture
-
-Use three layers:
-- **Primitive tokens:** raw colors and numeric foundations.
-- **Semantic tokens:** purpose-based names such as `text/primary` and `bg/surface`.
-- **Component tokens:** optional mappings for specific controls, derived from semantic tokens.
-
-### Naming
-
-Use slash-separated names in Figma and kebab-case CSS variables in code.
-
-| Figma token | CSS custom property |
-|---|---|
-| `bg/canvas` | `--light-bg-canvas` / `--dark-bg-canvas` |
-| `text/primary` | `--light-text-primary` / `--dark-text-primary` |
-| `spacing/4` | `--spacing-4` |
-| `radius/md` | `--radius-md` |
-| `duration/fast` | `--duration-fast` |
-
-### Figma collection note
-
-The current Starter-plan file uses separate one-mode collections for Light and Dark:
-- `Primitives`
-- `Color / Light`
-- `Color / Dark`
-- `Spacing & Shape`
-- `Motion`
-
-If multi-mode collections become available, the two semantic color collections can be consolidated into one collection with Light and Dark modes.
-
-## 3. Primitive color palette
-
-| Token | Hex |
-|---|---|
-| `white/0` | `#FFFFFF` |
-| `black/1000` | `#0B1020` |
-| `navy/950` | `#10172A` |
-| `navy/900` | `#17213A` |
-| `navy/800` | `#202D4A` |
-| `navy/700` | `#2C3A5A` |
-| `slate/50` | `#F8FAFC` |
-| `slate/100` | `#F1F5F9` |
-| `slate/200` | `#E2E8F0` |
-| `slate/300` | `#CBD5E1` |
-| `slate/400` | `#94A3B8` |
-| `slate/500` | `#64748B` |
-| `slate/600` | `#475569` |
-| `slate/700` | `#334155` |
-| `slate/800` | `#1E293B` |
-| `slate/900` | `#0F172A` |
-| `blue/50` | `#EFF6FF` |
-| `blue/100` | `#DBEAFE` |
-| `blue/300` | `#93C5FD` |
-| `blue/500` | `#3B82F6` |
-| `blue/600` | `#2563EB` |
-| `blue/700` | `#1D4ED8` |
-| `teal/50` | `#F0FDFA` |
-| `teal/500` | `#14B8A6` |
-| `teal/600` | `#0D9488` |
-| `green/50` | `#F0FDF4` |
-| `green/600` | `#16A34A` |
-| `amber/50` | `#FFFBEB` |
-| `amber/600` | `#D97706` |
-| `red/50` | `#FEF2F2` |
-| `red/600` | `#DC2626` |
-| `crimson/50` | `#FFF1F2` |
-| `crimson/600` | `#E11D48` |
-| `purple/50` | `#FAF5FF` |
-| `purple/600` | `#9333EA` |
-
-## 4. Semantic color roles
-
-These are the initial mappings. Test actual foreground/background combinations for WCAG contrast before production.
-
-| Semantic token | Light | Dark | Usage |
-|---|---|---|---|
-| `bg/canvas` | `slate/50` | `navy/950` | App background |
-| `bg/surface` | `white/0` | `navy/900` | Cards, forms, panels |
-| `bg/surface-raised` | `white/0` | `navy/800` | Popovers, elevated surfaces |
-| `bg/subtle` | `slate/100` | `navy/800` | Secondary surface |
-| `bg/brand` | `blue/600` | `blue/500` | Primary action |
-| `bg/brand-hover` | `blue/700` | `blue/300` | Hover; verify foreground contrast |
-| `bg/selected` | `blue/50` | `navy/700` | Selected item |
-| `bg/success` | `green/50` | `green/50` | Success surface |
-| `bg/warning` | `amber/50` | `amber/50` | Warning surface |
-| `bg/danger` | `red/50` | `red/50` | Error surface |
-| `bg/critical` | `crimson/50` | `crimson/50` | Critical/destructive emphasis |
-| `text/primary` | `slate/900` | `slate/50` | Main content |
-| `text/secondary` | `slate/600` | `slate/300` | Supporting content |
-| `text/muted` | `slate/500` | `slate/400` | Metadata |
-| `text/inverse` | `white/0` | `navy/950` | Text on inverse surfaces |
-| `text/brand` | `blue/700` | `blue/300` | Links and brand emphasis |
-| `text/success` | `green/600` | `green/600` | Success message/icon |
-| `text/warning` | `amber/600` | `amber/600` | Warning message/icon |
-| `text/danger` | `red/600` | `red/600` | Error message/icon |
-| `border/default` | `slate/200` | `navy/700` | Standard borders |
-| `border/strong` | `slate/300` | `slate/500` | Strong boundaries |
-| `border/focus` | `blue/600` | `blue/300` | Focus ring |
-| `border/danger` | `red/600` | `red/600` | Invalid field |
-| `icon/primary` | `slate/700` | `slate/100` | Main icons |
-| `icon/secondary` | `slate/500` | `slate/400` | Supporting icons |
-| `icon/brand` | `blue/600` | `blue/300` | Brand/action icons |
-
-Color rules:
-- Keep neutral surfaces dominant; use color to communicate meaning.
-- Reserve crimson/red for destructive actions and critical errors.
-- Pair status colors with text and/or icons; never use color alone.
-- Verify dark-theme status colors and hover colors against their actual backgrounds.
-- Do not assume contrast compliance from token names; measure real combinations.
-
-## 5. Typography
-
-**Typeface:** Inter.
-
-| Style | Weight | Size | Line height | Usage |
-|---|---|---:|---:|---|
-| `display/lg` | Bold | 40 px | 48 px | Major page statement |
-| `heading/h1` | Bold | 32 px | 40 px | Page title |
-| `heading/h2` | Bold | 28 px | 36 px | Main section |
-| `heading/h3` | Semi Bold | 24 px | 32 px | Subsection |
-| `heading/h4` | Semi Bold | 20 px | 28 px | Panel heading |
-| `title/lg` | Semi Bold | 18 px | 26 px | Card/dialog title |
-| `title/md` | Semi Bold | 16 px | 24 px | Compact title |
-| `body/lg` | Regular | 16 px | 26 px | Prominent body copy |
-| `body/md` | Regular | 14 px | 22 px | Default content |
-| `body/sm` | Regular | 13 px | 20 px | Dense supporting text |
-| `label/md` | Medium | 13 px | 18 px | Form label |
-| `label/sm` | Semi Bold | 12 px | 16 px | Table/compact label |
-| `caption` | Regular | 12 px | 16 px | Metadata |
-| `overline` | Semi Bold | 11 px | 14 px | Short category label |
-
-Typography rules:
-- Use sentence case for titles, buttons, menus, and helper text.
-- Use captions only for secondary information, not critical instructions.
-- Use tabular numerals for finance and analytics values where supported.
-- Keep paragraph line lengths comfortable and avoid ad hoc font sizes.
-
-## 6. Spacing, shape, and dimensions
-
-### Spacing scale
-
-| Token | Value |
-|---|---:|
-| `spacing/0` | 0 px |
-| `spacing/1` | 4 px |
-| `spacing/2` | 8 px |
-| `spacing/3` | 12 px |
-| `spacing/4` | 16 px |
-| `spacing/5` | 20 px |
-| `spacing/6` | 24 px |
-| `spacing/8` | 32 px |
-| `spacing/10` | 40 px |
-| `spacing/12` | 48 px |
-
-Use 4 px as the micro-step and 8 px as the main spacing rhythm.
-
-### Radius scale
-
-| Token | Value |
-|---|---:|
-| `radius/none` | 0 px |
-| `radius/xs` | 4 px |
-| `radius/sm` | 6 px |
-| `radius/md` | 10 px |
-| `radius/lg` | 14 px |
-| `radius/xl` | 20 px |
-| `radius/2xl` | 28 px |
-| `radius/full` | 999 px |
-
-### Common dimensions
-
-| Token | Value | Usage |
-|---|---:|---|
-| `size/icon-sm` | 16 px | Dense inline icon |
-| `size/icon-md` | 20 px | Standard icon |
-| `size/icon-lg` | 24 px | Prominent icon |
-| `size/control-sm` | 32 px | Compact control |
-| `size/control-md` | 40 px | Standard control |
-| `size/control-lg` | 48 px | Touch-friendly control |
-| `size/sidebar-expanded` | 264 px | Desktop sidebar |
-| `size/sidebar-collapsed` | 76 px | Desktop icon rail |
-| `size/topbar` | 64 px | Desktop top bar |
-| `layout/content-max` | 1440 px | Maximum content width |
-
-### Responsive guidance
-
-- Mobile: below 640 px
-- Tablet: 640–1023 px
-- Desktop: 1024–1439 px
-- Wide desktop: 1440 px and above
-
-Use a 12-column grid for wide desktop pages as appropriate, starting with 24 px gutters. Aim for 40–48 px primary controls and touch targets. Validate breakpoints against real pages and content.
-
-## 7. Elevation
-
-| Token | Initial treatment | Usage |
-|---|---|---|
-| `shadow/sm` | 1 px y / 3 px blur / low opacity | Small floating elements |
-| `shadow/md` | 4 px y / 12 px blur / low opacity | Menus and popovers |
-| `shadow/lg` | 12 px y / 28 px blur / moderate opacity | High-elevation overlays |
-
-Shadows communicate elevation; they do not replace clear borders or surface contrast.
-
-## 8. Motion and transitions
-
-| Token | Duration | Use |
-|---|---:|---|
-| `duration/instant` | 100 ms | Tiny feedback changes |
-| `duration/fast` | 160 ms | Hover and color changes |
-| `duration/standard` | 220 ms | Common transitions |
-| `duration/slow` | 320 ms | Larger panel transitions |
-| `duration/overlay` | 240 ms | Dialog/backdrop |
-
-Behavior:
-- Hover: 120–160 ms color/elevation transition.
-- Press: 100–160 ms; optional subtle scale to 0.98 for tactile controls.
-- Focus-visible: immediate 2 px ring with about 2 px offset.
-- Popover/menu: 160–240 ms opacity plus 4–8 px movement.
-- Drawer/modal: 220–320 ms; animate backdrop separately.
-- Loading: use stable skeletons or inline progress; avoid unnecessary flashing.
-- Background refresh: keep existing data visible when safe.
-
-Respect `prefers-reduced-motion`. Remove travel and scale animations where possible and use immediate changes or subtle opacity. Motion must not be required to understand state.
-
-## 9. Navigation architecture
-
-### Application shell
-1. **Sidebar:** role-aware navigation and expandable groups.
-2. **Top bar:** current scope, page context, search where relevant, notifications, help, and account menu.
-3. **Main content:** title, primary actions, filters, and content.
-4. **Contextual panel:** only where it improves the task.
-
-### Suggested navigation groups
-- Overview
-- Institutions
-- People & Roles
-- Academics
-- Timetable
-- Attendance
-- Admissions & Enrolment
-- Fees & Billing
-- Finance
-- Reports & Insights
-- Settings
-
-Visibility must depend on role, subscription entitlements, institution type, and enabled modules.
-
-### Navigation states
-Default, hover, focus-visible, active/current route, expanded/collapsed, disabled, loading, and useful notification counts. Combine active background, icon/text treatment, and semantics such as `aria-current="page"`; do not rely on color alone.
-
-### Responsive behavior
-- Desktop: 264 px expanded sidebar, 76 px collapsed rail, 64 px top bar.
-- Tablet: dismissible sidebar drawer.
-- Mobile: compact top bar and role-aware navigation drawer.
-- On drawer close, restore focus to the trigger.
-- Icon-only navigation must have accessible names and tooltips.
-
-### Tenant scope
-- Show the active organization/institution scope clearly.
-- Changing scope must refresh tenant-dependent data, navigation, and breadcrumbs.
-- Never silently mix institution records.
-- Never trust a client-supplied tenant ID as authorization.
-- Resolve and enforce membership and scope on the server.
-- For unauthorized deep links, show an access-denied state without leaking another tenant's records.
-
-## 10. Component interaction states
-
-Define these states wherever applicable:
-
-| State | Expected behavior |
-|---|---|
-| Default | Clear label and expected action |
-| Hover | Subtle feedback; not the only cue |
-| Focus-visible | Strong keyboard focus indicator |
-| Pressed | Immediate tactile response |
-| Selected | Persistent and distinguishable from hover |
-| Disabled | Clearly unavailable; explain why if not obvious |
-| Loading | Show progress and prevent unsafe duplicate submissions |
-| Success | Confirm only after server confirmation |
-| Error | Explain issue and recovery path |
-| Empty | Explain absence and next valid action |
-| Read-only | Make non-editable state clear |
-| Stale/offline | Show last sync and queued/unavailable action status |
-
-## 11. Data states and UI behavior
-
-Every data-driven page must define relevant loading, empty, success, error, partial, stale/offline, and forbidden states.
-
-### Loading
-- Preserve page structure.
-- Use skeletons matching the final layout when useful.
-- Use inline spinners for short actions.
-- Use determinate progress when total work is known.
-- Avoid blanking the whole page for a small update.
-
-### Empty
-- Explain what is missing and, when known, why.
-- Offer the next valid action.
-- Do not seed fake business data.
-- Do not show creation actions to users without permission.
-
-### Success
-- Confirm only after the server reports success.
-- Update the record and dependent counts after confirmation.
-- Use concise toasts for low-risk operations and inline confirmation for important workflows.
-
-### Error
-- Use plain language and explain next steps.
-- Preserve valid form input.
-- Distinguish validation, permission, connectivity, conflict, and server errors.
-- Offer retry only when safe.
-- Never expose stack traces, secrets, or sensitive tenant information.
-
-### Stale/offline
-- Show last synchronization time.
-- Distinguish cached/read-only data from unsynchronized changes.
-- Never claim an offline write is server-saved.
-- Show queued changes and provide a retry/sync path.
-- Resolve conflicts explicitly rather than silently overwriting newer data.
-
-### Forbidden
-- Explain that the current account lacks permission.
-- Offer an access-request path where appropriate.
-- Do not reveal whether another tenant owns the requested record.
-- Enforce permissions on the server, even if the UI hides routes.
-
-### Partial data
-Keep successful sections visible and identify failed sections. Offer targeted retries where possible.
-
-## 12. Forms, tables, and analytics
-
-### Forms
-- Place labels above fields by default.
-- Mark required fields clearly.
-- Validate after blur and on submit; avoid aggressive errors while typing.
-- Associate errors programmatically with fields.
-- Preserve valid values after server errors.
-- Prevent duplicate submissions where appropriate.
-- Show Saving/Saved/Failed for autosave.
-- Handle concurrent edits and conflicts.
-- Normalize input without silently changing legitimate user intent.
-- Server-side validation and authorization are mandatory.
-
-### Tables and lists
-- Align numeric values consistently; right-align numeric columns where appropriate.
-- Use tabular numerals for finance/analytics where supported.
-- Show sort direction, visible filters, and removable filter chips.
-- Show an actionable empty result when filters match nothing.
-- Use pagination or virtualization for large data sets.
-- Report visible range and total when known.
-- Plan horizontal overflow on small screens intentionally.
-
-### Finance and academic data
-- Use decimal-safe backend calculations; JavaScript floating-point arithmetic must not be authoritative for money.
-- Display currency consistently and include currency code when ambiguous.
-- Distinguish draft, posted, overdue, reversed, and reconciled records.
-- Correct posted accounting entries through approved reversal/correction workflows.
-- Distinguish missing, not assessed, exempt, absent, and zero academic values.
-- Enforce permissions for reports and exports.
-
-### Analytics
-- Identify the period, filters, and scope behind each metric.
-- Label estimates and AI-generated insights.
-- Never fabricate trends, counts, comparisons, or sample transactions in production.
-- Restrict analytical queries to authorized data.
-
-## 13. Dialogs and destructive actions
-
-- Use dialogs for decisions requiring focused attention.
-- Give every dialog a clear title and specific primary action.
-- Support Escape where safe, trap focus in modals, and restore focus on close.
-- Confirm irreversible actions with the object and consequence.
-- Prefer archive/soft-delete where policy permits.
-- Reserve crimson/red for destructive and critical actions.
-- Consider re-authentication for sensitive operations.
-- Do not imply a payment, deletion, cancellation, or submission succeeded until the server confirms it.
-
-## 14. AI assistance UI
-
-- Label AI-generated recommendations and summaries.
-- State the reporting period and authorized data sources.
-- Communicate uncertainty; do not present predictions as facts.
-- Require human confirmation for consequential actions.
-- Do not allow arbitrary model-generated SQL to bypass authorization.
-- Never expose another institution's data through prompts or summaries.
-- Provide a fallback when AI is unavailable.
-- Do not invent operational records to make dashboards appear populated.
-
-## 15. Accessibility
-
-Target WCAG 2.2 AA as the baseline, subject to implementation testing.
-
-- Maintain sufficient contrast for text, icons, controls, borders, and focus.
-- Support keyboard navigation across menus, dialogs, forms, and tables.
-- Use semantic HTML and accessible names for icon-only controls.
-- Associate labels, helper text, and errors with form fields.
-- Announce dynamic status updates when appropriate.
-- Do not rely on color, sound, animation, or position alone.
-- Support zoom and narrow viewports without losing essential actions.
-- Respect reduced-motion settings.
-- Test with keyboard-only use and representative screen-reader workflows.
-
-Measure contrast on actual combinations; token names alone do not prove compliance.
-
-## 16. CSS implementation starter
-
-This is a starter mapping, not a complete export. Verify values against Figma and test contrast before production.
+## Design Token & UI Behavior Specification
+
+- **Document ID:** SEC-DS-001
+- **System Version**: OS v1.0 (Sovereign Hospitality Edition)
+- **Specification Status**: Standard / Approved Reference Architecture
+- **Standards Compliance**: W3C Design Tokens Community Group (DTCG) Draft Specification, WCAG 2.1 Level AA Accessibility Standards, Universal Frontend Design Constitution
+- **Repository Path**: `docs/DESIGN_SYSTEM.md`
+- **Artifact Path**: `design_tokens_and_ui_behaviors.md`
+
+---
+
+## Table of Contents
+- [SaaS POS Cloud — Design Tokens \& UI Behavior Standard](#saas-pos-cloud--design-tokens--ui-behavior-standard)
+  - [Design Token \& UI Behavior Specification](#design-token--ui-behavior-specification)
+  - [Table of Contents](#table-of-contents)
+  - [1. Executive Summary \& Design Philosophy](#1-executive-summary--design-philosophy)
+    - [Core Tenets](#core-tenets)
+  - [2. Universal Anti-Slop \& Design Constitution](#2-universal-anti-slop--design-constitution)
+    - [A. Zero-Pill \& Metadata Discipline](#a-zero-pill--metadata-discipline)
+    - [B. Eradication of Mechanical Clutter](#b-eradication-of-mechanical-clutter)
+    - [C. Spatial Math \& Viewport Integrity](#c-spatial-math--viewport-integrity)
+  - [3. Design Token System](#3-design-token-system)
+    - [3.1 Color Tokens \& 60-30-10 Distribution](#31-color-tokens--60-30-10-distribution)
+      - [Palette Tokens Specification Table](#palette-tokens-specification-table)
+    - [3.2 Typography Tokens \& Hierarchy](#32-typography-tokens--hierarchy)
+      - [Typography Scale Tokens](#typography-scale-tokens)
+    - [3.3 Spatial Spacing, Sizing \& Grid Tokens](#33-spatial-spacing-sizing--grid-tokens)
+      - [Structural Rules:](#structural-rules)
+    - [3.4 Elevation, Surface \& Glassmorphism Tokens](#34-elevation-surface--glassmorphism-tokens)
+      - [Ambient Background Lighting Tokens:](#ambient-background-lighting-tokens)
+    - [3.5 Border, Radius \& Mathematical Ratios](#35-border-radius--mathematical-ratios)
+      - [Nested Radius Math](#nested-radius-math)
+      - [Standard Radius Scale](#standard-radius-scale)
+    - [3.6 Motion, Curves \& Interaction Timing](#36-motion-curves--interaction-timing)
+      - [Latency Budget Rules:](#latency-budget-rules)
+      - [Cubic-Bezier Curves](#cubic-bezier-curves)
+  - [4. Machine-Readable Token Exports](#4-machine-readable-token-exports)
+    - [4.1 W3C DTCG Standard JSON Token Schema](#41-w3c-dtcg-standard-json-token-schema)
+    - [4.2 Tailwind CSS Theme Extension Object](#42-tailwind-css-theme-extension-object)
+    - [4.3 Native CSS Custom Properties (:root)](#43-native-css-custom-properties-root)
+    - [4.4 TypeScript Token Interfaces \& Design Dictionary Schema](#44-typescript-token-interfaces--design-dictionary-schema)
+  - [5. Exhaustive UI Behavioral Specifications](#5-exhaustive-ui-behavioral-specifications)
+    - [5.1 Multi-Step Platform Installation Wizard (If decided for implementation)](#51-multi-step-platform-installation-wizard-if-decided-for-implementation)
+      - [Step Behavior Matrix](#step-behavior-matrix)
+    - [5.2 Modals, Drawers \& Floating Glass Docks](#52-modals-drawers--floating-glass-docks)
+      - [Modal Dialogue Choreography](#modal-dialogue-choreography)
+      - [Floating Sidebar Glass Dock (Layout.tsx)](#floating-sidebar-glass-dock-layouttsx)
+    - [5.3 Form Controls, Validation \& Live Feedback](#53-form-controls-validation--live-feedback)
+      - [Input Field Behavioral States](#input-field-behavioral-states)
+    - [5.4 Micro-Interactions, Hover Mechanics \& Latency Budgets](#54-micro-interactions-hover-mechanics--latency-budgets)
+      - [Button Press \& Hover Physics](#button-press--hover-physics)
+    - [5.5 Toast Notifications \& Real-Time Alerts](#55-toast-notifications--real-time-alerts)
+  - [6. Component Pattern Catalog \& Implementation Guide](#6-component-pattern-catalog--implementation-guide)
+    - [A. Segmented Tab Filter (Interactive Button Group)](#a-segmented-tab-filter-interactive-button-group)
+    - [B. Glassmorphic Luxury Property Card](#b-glassmorphic-luxury-property-card)
+  - [7. Governance, Audit \& Verification Checklist](#7-governance-audit--verification-checklist)
+
+---
+
+## 1. Executive Summary & Design Philosophy
+
+The SaaS POS Cloud — Design Tokens & UI Behavior Standard design system bridges ultra-luxury hospitality elegance with sovereign cloud-native administrative rigor. Unlike generic SaaS interfaces that rely on predictable templates or toy-like gamified badges, SaaS POS Cloud evokes the quiet confidence, dark atmospheric depth, and bespoke tactile craftsmanship of a five-star private estate.
+
+### Core Tenets
+1. **Sovereign Dark Atmosphere**: Backgrounds are grounded in nocturnal obsidian (`#000000`, `#050505`) and muted charcoal (`#121212`), illuminated by subtle diffused amber/gold ambient glows rather than harsh bright white surfaces.
+2. **Brushed Metallic Intent**: Accent color is strictly concentrated in luxury gold tones (`#D4AF37`, `#AA8C2C`) applied with mathematical restraint (the 10% accent rule) to guide user focus to primary decisions, transactional confirmations, and executive status.
+3. **Tactile Glassmorphism**: Floating panels, docks, and modal surfaces utilize high-index backdrop blurs (12px to 20px) with razor-thin hairline borders (`1px solid rgba(255, 255, 255, 0.08)`), emulating smoked crystal and brushed anodized aluminum.
+4. **Single-Source Consistency**: Every interactive state, button, typography size, and surface border is derived from machine-readable tokens to eliminate drift between design prototypes, web components, and backend schemas.
+
+---
+
+## 2. Universal Anti-Slop & Design Constitution
+
+To guarantee that the application remains distinctive, elegant, and production-grade, the design system enforces strict anti-pattern prohibitions across all views:
+
+### A. Zero-Pill & Metadata Discipline
+- **Prohibition on Static Pill Badges**: Never wrap static metadata (such as categories, tags, dates, publication timestamps, counts, room statuses, or read times) in rounded pill boxes, bordered capsules, or colorful candy chips.
+- **Clean Typographic Formatting**: All informational metadata must be rendered as clean, unboxed text separated by subtle typographic characters (`·`, `/`, `-`).
+  - *Incorrect*: `<span className="bg-amber-100 text-amber-800 rounded-full px-2 py-0.5 text-xs">Deluxe Suite</span>`
+  - *Correct*: `<div className="flex items-center gap-2 text-xs text-gray-400"><span>Bossy Premium</span><span aria-hidden="true">·</span><span>450 sq ft</span><span aria-hidden="true">·</span><span>Oceanfront</span></div>`
+- **Interactive Controls vs. Static Metadata**: Functional controls that trigger state changes or filtering when clicked (e.g., segmented controls, room status filters) are explicit button elements (`<button>`) styled as unified segmented groups, never standalone floating pill tags.
+
+### B. Eradication of Mechanical Clutter
+- **No Code-Comment Headers**: Prohibit prefixing section headers with comment syntax (`//`, `/* */`, `>_`, `#`) or mechanical snake_case identifiers (`// 01_SUITES_AVAILABLE`). Use title-cased editorial headers.
+- **Natural Editorial Numbering**: Curated multi-step processes use dignified editorial numerals (`01. Security Handshake`, `02. Super Administrator Credentials`), never simulated terminal prompts (`>_ STEP_01`).
+- **No Hallucinated Telemetry or Scorecards**: Prohibit arbitrary single-number AI scores (e.g. `98/100 WELLNESS SCORE`) or fake engine tickers pinned to the bottom of the viewport (`STATUS: ONLINE // LATENCY: 1.2ms`) unless representing real streaming telemetry.
+- **Human Functional Verbs**: Buttons use crisp, unambiguous verbs (`"Proceed to Authentication"`, `"Save Gateway Settings"`, `"Verify Credentials"`, `"Reserve Suite"`). Roleplay jargon (`"Invoke Sovereign Portal"`, `"Engage Alchemical Matrix"`) is strictly prohibited.
+
+### C. Spatial Math & Viewport Integrity
+- **Single-Elevation Depth**: Strict ban on nested "cards within cards". Content hierarchy is established via generous whitespace (2rem–3rem), subtle surface background deltas ($\le 12\%$), and hairline dividers (`1px solid rgba(255, 255, 255, 0.06)`).
+- **Nested Radius Rule**: Whenever a nested container sits inside a padded parent container:
+  $$r_{\text{inner}} = r_{\text{outer}} - \text{padding}$$
+- **Button Padding Ratio**: Horizontal padding is approximately double the vertical padding (`py-2 px-4` or `py-3 px-6`).
+
+---
+
+## 3. Design Token System
+
+### 3.1 Color Tokens & 60-30-10 Distribution
+
+The palette is allocated according to the classical 60-30-10 interior architecture distribution rule:
+- **60% Dominant Neutral Canvas**: Obsidian Black (`#000000`, `#050505`) and Dark Charcoal (`#121212`).
+- **30% Structural Surfaces**: Smoked Glass (`rgba(20, 20, 20, 0.6)`), Translucent Hairline Borders (`rgba(255, 255, 255, 0.08)`), and Antique Cream body text (`#F5F5F0`).
+- **10% Accent Intent**: Brushed Metallic Gold (`#D4AF37`, `#AA8C2C`) and purposeful semantic state indicators.
+
+#### Palette Tokens Specification Table
+
+| Token Identifier | Hex / CSS Value | RGB Channels | Role & Semantic Intent | WCAG AA Contrast on #000000 |
+| :--- | :--- | :--- | :--- | :--- |
+| `color.luxury.gold` | `#D4AF37` | `212, 175, 55` | Primary brand accent, primary CTA, active navigation, focus halo | 9.8:1 (Pass AAA) |
+| `color.luxury.gold-dim`| `#AA8C2C` | `170, 140, 44` | Hover accent, secondary gold icons, subtle borders | 6.5:1 (Pass AA) |
+| `color.luxury.gold-light`| `#F5E6BE` | `245, 230, 190` | High-light gold gradient top-stop, VIP insignia highlight | 14.2:1 (Pass AAA) |
+| `color.luxury.gold-dark` | `#705915` | `112, 89, 21` | Depressed/active button background, dark badge trim | 3.1:1 (Structural) |
+| `color.luxury.gold-glow` | `rgba(212, 175, 55, 0.15)` | `212, 175, 55, 0.15` | Focus rings, backdrop aura, ambient light source | N/A (Atmospheric) |
+| `color.luxury.black` | `#050505` | `5, 5, 5` | Surface panel backgrounds, nested card backing | N/A (Canvas) |
+| `color.luxury.charcoal`| `#121212` | `18, 18, 18` | Elevated card fill, inputs, sidebar docking fill | N/A (Surface) |
+| `color.luxury.charcoal-elevated`| `#1C1C1E` | `28, 28, 30` | Hovered rows, floating dropdowns, popover containers | N/A (Surface) |
+| `color.luxury.cream` | `#F5F5F0` | `245, 245, 240` | Primary readable prose, high-contrast headings | 18.5:1 (Pass AAA) |
+| `color.luxury.muted` | `#94A3B8` | `148, 163, 184` | Secondary text, field labels, inactive tabs | 7.3:1 (Pass AA) |
+| `color.luxury.hairline`| `rgba(255, 255, 255, 0.08)` | `255, 255, 255, 0.08` | Structural bounding lines, table dividers, panel rims | N/A (Hairline) |
+| `color.semantic.emerald`| `#10B981` | `16, 185, 129` | Confirmed bookings, system verified, nominal DB status | 8.2:1 (Pass AAA) |
+| `color.semantic.amber` | `#F59E0B` | `245, 158, 11` | Pending settlement, system uninstalled, warnings | 9.4:1 (Pass AAA) |
+| `color.semantic.crimson`| `#EF4444` | `239, 68, 68` | Critical security alert, setup route sealed, error state | 5.8:1 (Pass AA) |
+| `color.semantic.purple` | `#8B5CF6` | `139, 92, 246` | Sovereign crypto ledger, Web3 escrow, Royal VIP tier | 6.1:1 (Pass AA) |
+
+---
+
+### 3.2 Typography Tokens & Hierarchy
+
+The application enforces the **2+1 Typographic Rule**:
+1. **Display Face (`font-serif`)**: `Playfair Display` (Latin Serif) — used for brand wordmarks, presidential suite names, and hero headlines.
+2. **Interface & Prose Face (`font-sans`)**: `Inter` (Neo-Grotesque Sans) — used for all functional controls, navigation links, form labels, and body text.
+3. **Data & Numerical Face (`font-mono`)**: `JetBrains Mono` with `tabular-nums` — used strictly for financial balances, room tariffs, room keys, cryptographic hashes, countdown timers, and port configurations.
+
+#### Typography Scale Tokens
+
+| Token | Size | Line Height | Letter Spacing | Font Family | Default Weight | Target Applications |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `type.scale.display-xl` | `clamp(2.25rem, 4vw, 3.75rem)` | `1.1` | `-0.02em` | `Playfair Display` | 700 (Bold) | Landing hero headlines, VIP arrival welcomes |
+| `type.scale.display-lg` | `2.25rem (36px)` | `1.15` | `-0.015em` | `Playfair Display` | 600 (SemiBold) | Section hero titles, installer step titles |
+| `type.scale.display-md` | `1.5rem (24px)` | `1.25` | `-0.01em` | `Playfair Display` | 600 (SemiBold) | Modal headings, hotel suite card titles |
+| `type.scale.body-lg` | `1.125rem (18px)` | `1.5` | `0` | `Inter` | 400 (Regular) | Lead introductory paragraphs |
+| `type.scale.body-base` | `1.0rem (16px)` | `1.6` | `0` | `Inter` | 400 / 500 | Standard prose, form input text, modal body |
+| `type.scale.body-sm` | `0.875rem (14px)` | `1.5` | `0.01em` | `Inter` | 400 / 500 | Sidebar items, table data cells, button labels |
+| `type.scale.meta-xs` | `0.75rem (12px)` | `1.4` | `0.02em` | `Inter` | 500 / 600 | Unboxed metadata, input labels, badge text |
+| `type.scale.kicker-micro`| `0.625rem (10px)`| `1.2` | `0.2em` | `Inter` | 600 (SemiBold) | Uppercase subtitles (`OS v26.2`, `MEMBERSHIP`) |
+| `type.scale.data-mono` | `0.875rem (14px)` | `1.4` | `0` | `JetBrains Mono` | 500 (`tabular-nums`)| Currency figures (`TSh 1,200,000`), port entries |
+
+---
+
+### 3.3 Spatial Spacing, Sizing & Grid Tokens
+
+Built upon an immutable **4px Harmonic Baseline Grid**:
+
+```
+ 4px    8px    12px   16px   20px   24px   32px   40px   48px   64px   80px
+ ───    ───    ────   ────   ────   ────   ────   ────   ────   ────   ────
+  1      2      3      4      5      6      8      10     12     16     20
+```
+
+#### Structural Rules:
+- **Container Inset Principle**: Outer padding of any card or container must be strictly greater than or equal to the inner gap between its child components:
+  $$\text{Padding}_{\text{outer}} \ge \text{Gap}_{\text{inner}} \quad (\text{Minimum Card Padding} = 16\text{px} \text{ / } \text{space-4})$$
+- **Desktop Grid Baseline**: 1440px viewport width with 280px fixed glass sidebar and responsive fluid workspace canvas.
+- **Touch Target Accessibility**: Minimum interactive touch target height is $40\text{px}$ on desktop and $44\text{px}$ on mobile (`min-h-[44px]`).
+
+---
+
+### 3.4 Elevation, Surface & Glassmorphism Tokens
+
+SmartGuest employs atmospheric smoked glass rather than garish layered drop shadows.
 
 ```css
-:root {
-  --font-family-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
-
-  --spacing-0: 0;
-  --spacing-1: 4px;
-  --spacing-2: 8px;
-  --spacing-3: 12px;
-  --spacing-4: 16px;
-  --spacing-5: 20px;
-  --spacing-6: 24px;
-  --spacing-8: 32px;
-  --spacing-10: 40px;
-  --spacing-12: 48px;
-
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
-  --radius-full: 999px;
-
-  --duration-instant: 100ms;
-  --duration-fast: 160ms;
-  --duration-standard: 220ms;
-  --duration-slow: 320ms;
-  --duration-overlay: 240ms;
-
-  --light-bg-canvas: #f8fafc;
-  --light-bg-surface: #ffffff;
-  --light-bg-subtle: #f1f5f9;
-  --light-bg-brand: #2563eb;
-  --light-text-primary: #0f172a;
-  --light-text-secondary: #475569;
-  --light-text-muted: #64748b;
-  --light-text-brand: #1d4ed8;
-  --light-border-default: #e2e8f0;
-  --light-border-focus: #2563eb;
-
-  --color-bg-canvas: var(--light-bg-canvas);
-  --color-bg-surface: var(--light-bg-surface);
-  --color-bg-subtle: var(--light-bg-subtle);
-  --color-bg-brand: var(--light-bg-brand);
-  --color-text-primary: var(--light-text-primary);
-  --color-text-secondary: var(--light-text-secondary);
-  --color-text-muted: var(--light-text-muted);
-  --color-text-brand: var(--light-text-brand);
-  --color-border-default: var(--light-border-default);
-  --color-border-focus: var(--light-border-focus);
+/* Glassmorphism System Specifications */
+.glass-panel {
+  background: rgba(20, 20, 20, 0.60);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.6);
 }
 
-[data-theme="dark"] {
-  --color-bg-canvas: #10172a;
-  --color-bg-surface: #17213a;
-  --color-bg-subtle: #202d4a;
-  --color-bg-brand: #3b82f6;
-  --color-text-primary: #f8fafc;
-  --color-text-secondary: #cbd5e1;
-  --color-text-muted: #94a3b8;
-  --color-text-brand: #93c5fd;
-  --color-border-default: #2c3a5a;
-  --color-border-focus: #93c5fd;
+.glass-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
+```
 
-body {
-  font-family: var(--font-family-sans);
-  background: var(--color-bg-canvas);
-  color: var(--color-text-primary);
-}
+#### Ambient Background Lighting Tokens:
+- **Atmospheric Gold Glow**: `w-[50%] h-[50%] bg-luxury-gold/5 blur-[120px] rounded-full` positioned at `top-[-20%] left-[-10%]`.
+- **Deep Nocturnal Ocean Glow**: `w-[40%] h-[40%] bg-blue-900/10 blur-[120px] rounded-full` positioned at `bottom-[-20%] right-[-10%]`.
 
-:focus-visible {
-  outline: 2px solid var(--color-border-focus);
-  outline-offset: 2px;
-}
+---
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+### 3.5 Border, Radius & Mathematical Ratios
+
+#### Nested Radius Math
+To avoid visual tension, internal elements inherit outer curvature minus the inset spacing:
+
+```
+┌──────────────────────────────────────────────┐  r_outer = 1.5rem (24px)
+│   padding = 1rem (16px)                      │
+│   ┌──────────────────────────────────────┐   │
+│   │                                      │   │  r_inner = 24px - 16px = 8px
+│   │                                      │   │  (rounded-lg)
+│   └──────────────────────────────────────┘   │
+└──────────────────────────────────────────────┘
+```
+
+#### Standard Radius Scale
+- `radius.sm`: `0.25rem (4px)` — Small tags, fine controls
+- `radius.md`: `0.5rem (8px)` — Form inputs, standard buttons, inner cards
+- `radius.lg`: `0.75rem (12px)` — Interactive modal controls, alert banners
+- `radius.xl`: `1.0rem (16px)` — Standard cards, dialog boxes
+- `radius.2xl`: `1.5rem (24px)` — Master feature containers, wizard stages
+- `radius.full`: `9999px` — User avatars, circular icon triggers, status beacons
+
+---
+
+### 3.6 Motion, Curves & Interaction Timing
+
+#### Latency Budget Rules:
+- **Routine Micro-Interactions**: $\le 200\text{ms}$ execution latency. Button presses, tab switches, and hover highlights must complete within this window.
+- **Modal & Drawer Revealing**: $200\text{ms} - 350\text{ms}$ with smooth deceleration curve.
+- **Compositor Property Restriction**: Only animate `transform`, `opacity`, and `filter`. Animating layout geometry (`width`, `height`, `margin`, `padding`) is strictly banned.
+
+#### Cubic-Bezier Curves
+- **Standard Easing (Decel Settle)**: `cubic-bezier(0.16, 1, 0.3, 1)` — for modals, cards, floating docks.
+- **Snappy Bounce**: `cubic-bezier(0.32, 0.72, 0, 1)` — for mobile drawer slide reveals.
+- **Ambient Breathing**: `cubic-bezier(0.4, 0, 0.6, 1)` — for slow 4s radial glows.
+
+---
+
+## 4. Machine-Readable Token Exports
+
+### 4.1 W3C DTCG Standard JSON Token Schema
+
+```json
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "color": {
+    "luxury": {
+      "gold": {
+        "$value": "#D4AF37",
+        "$type": "color",
+        "$description": "Sovereign gold primary brand accent and CTA fill."
+      },
+      "goldDim": {
+        "$value": "#AA8C2C",
+        "$type": "color",
+        "$description": "Muted burnished gold for secondary interactive states."
+      },
+      "goldLight": {
+        "$value": "#F5E6BE",
+        "$type": "color",
+        "$description": "Champagne highlight tone for luxury gradient tops."
+      },
+      "black": {
+        "$value": "#050505",
+        "$type": "color",
+        "$description": "Nocturnal surface base."
+      },
+      "charcoal": {
+        "$value": "#121212",
+        "$type": "color",
+        "$description": "Elevated card and sidebar foundation."
+      },
+      "cream": {
+        "$value": "#F5F5F0",
+        "$type": "color",
+        "$description": "High-contrast antique white text."
+      },
+      "glass": {
+        "$value": "rgba(255, 255, 255, 0.05)",
+        "$type": "color",
+        "$description": "Subtle card translucent sheen."
+      }
+    },
+    "semantic": {
+      "success": {
+        "$value": "#10B981",
+        "$type": "color",
+        "$description": "Verified status, confirmed suite booking, active ledger."
+      },
+      "warning": {
+        "$value": "#F59E0B",
+        "$type": "color",
+        "$description": "Pending settlement, setup required, warning flag."
+      },
+      "danger": {
+        "$value": "#EF4444",
+        "$type": "color",
+        "$description": "Permanent seal, critical system halt, authentication error."
+      },
+      "crypto": {
+        "$value": "#8B5CF6",
+        "$type": "color",
+        "$description": "Royal VIP tier and decentralized escrow protocol."
+      }
+    }
+  },
+  "typography": {
+    "fontFamily": {
+      "display": {
+        "$value": ["Playfair Display", "serif"],
+        "$type": "fontFamily"
+      },
+      "body": {
+        "$value": ["Inter", "sans-serif"],
+        "$type": "fontFamily"
+      },
+      "data": {
+        "$value": ["JetBrains Mono", "monospace"],
+        "$type": "fontFamily"
+      }
+    }
+  },
+  "duration": {
+    "instant": {
+      "$value": "100ms",
+      "$type": "duration"
+    },
+    "micro": {
+      "$value": "200ms",
+      "$type": "duration"
+    },
+    "surface": {
+      "$value": "350ms",
+      "$type": "duration"
+    }
+  },
+  "cubicBezier": {
+    "luxury": {
+      "$value": [0.16, 1, 0.3, 1],
+      "$type": "cubicBezier"
+    }
   }
 }
 ```
 
-Implementation requirements:
-- The CSS snippet is not a full token export.
-- Do not ship the dark theme until the full semantic palette has been reviewed.
-- Prefer one centralized theme provider or root `data-theme` attribute.
-- Avoid duplicating token values across components or stylesheets.
-- If using CSS Modules or a utility framework, map these semantic names into it rather than creating a competing palette.
+---
 
-## 17. Definition of done for UI components
+### 4.2 Tailwind CSS Theme Extension Object
 
-- [ ] Uses semantic tokens instead of arbitrary values.
-- [ ] Defines relevant default, hover, focus-visible, pressed, disabled, loading, success, and error states.
-- [ ] Keyboard interaction and accessible naming work.
-- [ ] Contrast and focus visibility have been checked.
-- [ ] Relevant loading, empty, error, offline/stale, and forbidden states are implemented.
-- [ ] Works on mobile, tablet, desktop, and wide layouts.
-- [ ] Does not expose unauthorized tenant data or actions.
-- [ ] Distinguishes server-confirmed success from pending/failed requests.
-- [ ] Respects reduced-motion settings.
-- [ ] Automated tests cover meaningful interaction and error paths.
-- [ ] Introduces no fabricated production business data.
-- [ ] Figma and implementation remain consistent.
+```javascript
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        luxury: {
+          gold: '#D4AF37',
+          'gold-dim': '#AA8C2C',
+          'gold-light': '#F5E6BE',
+          'gold-dark': '#705915',
+          black: '#050505',
+          charcoal: '#121212',
+          'charcoal-elevated': '#1C1C1E',
+          glass: 'rgba(255, 255, 255, 0.05)',
+          cream: '#F5F5F0',
+        },
+        semantic: {
+          emerald: '#10B981',
+          amber: '#F59E0B',
+          crimson: '#EF4444',
+          royal: '#8B5CF6',
+        }
+      },
+      fontFamily: {
+        serif: ['"Playfair Display"', 'serif'],
+        sans: ['"Inter"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
+      },
+      backdropBlur: {
+        xs: '2px',
+        md: '12px',
+        xl: '20px',
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+        'fade-in-up': 'fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+        'scale-in': 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+        'float': 'float 6s ease-in-out infinite',
+        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'shimmer': 'shimmer 2.5s linear infinite',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        fadeInUp: {
+          '0%': { opacity: '0', transform: 'translateY(16px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        scaleIn: {
+          '0%': { opacity: '0', transform: 'scale(0.97)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-8px)' },
+        },
+        shimmer: {
+          'from': { backgroundPosition: '0 0' },
+          'to': { backgroundPosition: '-200% 0' },
+        }
+      }
+    }
+  }
+};
+```
 
-## 18. Governance
+---
 
-- Add or change tokens centrally; avoid one-off values.
-- Record why new semantic tokens are needed.
-- Update Figma, CSS mappings, component docs, and tests together.
-- Treat public token names as an implementation contract.
-- Review changes in both Light and Dark themes.
-- Review accessibility, responsive behavior, and tenant-scope implications for shared components.
-- Keep this document versioned alongside source code.
+### 4.3 Native CSS Custom Properties (:root)
 
-## 19. Figma inventory
+```css
+:root {
+  /* Brand Palette */
+  --shee-color-gold: #D4AF37;
+  --shee-color-gold-dim: #AA8C2C;
+  --shee-color-gold-light: #F5E6BE;
+  --shee-color-gold-dark: #705915;
+  --shee-color-gold-glow: rgba(212, 175, 55, 0.15);
+  
+  /* Canvas & Surfaces */
+  --shee-color-canvas: #000000;
+  --shee-color-panel: #050505;
+  --shee-color-charcoal: #121212;
+  --shee-color-charcoal-elevated: #1C1C1E;
+  --shee-color-cream: #F5F5F0;
+  --shee-color-muted: #94A3B8;
+  --shee-color-hairline: rgba(255, 255, 255, 0.08);
 
-The connected Figma file includes a `Foundations & UI Behavior` page with color specimens, typography specimens, navigation example, interaction states, data-state cards, layout guidance, and implementation notes.
+  /* Semantic Telemetry */
+  --shee-color-success: #10B981;
+  --shee-color-warning: #F59E0B;
+  --shee-color-danger: #EF4444;
+  --shee-color-royal: #8B5CF6;
 
-Current reported inventory:
-- 5 variable collections
-- 120 variables
-- 14 text styles
-- 3 effect styles
+  /* Typography */
+  --shee-font-display: 'Playfair Display', Georgia, serif;
+  --shee-font-interface: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --shee-font-data: 'JetBrains Mono', monospace;
 
-**Figma file:** https://www.figma.com/design/UcUf20X4qLOlrf8BSIIyGz
+  /* Elevation & Blur */
+  --shee-blur-glass: 20px;
+  --shee-blur-card: 12px;
+  --shee-ease-luxury: cubic-bezier(0.16, 1, 0.3, 1);
+  --shee-duration-micro: 200ms;
+}
+```
 
-These counts describe the Figma file; they do not mean the application already consumes all tokens or implements every behavior.
+---
+
+### 4.4 TypeScript Token Interfaces & Design Dictionary Schema
+
+```typescript
+export interface SmartGuestDesignTokens {
+  color: {
+    luxury: {
+      gold: string;
+      goldDim: string;
+      goldLight: string;
+      goldDark: string;
+      goldGlow: string;
+      black: string;
+      charcoal: string;
+      charcoalElevated: string;
+      cream: string;
+      muted: string;
+      hairline: string;
+    };
+    semantic: {
+      success: string;
+      warning: string;
+      danger: string;
+      royal: string;
+    };
+  };
+  typography: {
+    fontFamily: {
+      display: string;
+      interface: string;
+      data: string;
+    };
+    scale: Record<'displayXl' | 'displayLg' | 'displayMd' | 'bodyLg' | 'bodyBase' | 'bodySm' | 'metaXs', string>;
+  };
+  motion: {
+    duration: {
+      instant: number; // 100ms
+      micro: number;   // 200ms
+      surface: number; // 350ms
+    };
+    easing: {
+      luxury: string;
+      drawer: string;
+    };
+  };
+}
+
+export const SHEE_TOKENS: SmartGuestDesignTokens = {
+  color: {
+    luxury: {
+      gold: '#D4AF37',
+      goldDim: '#AA8C2C',
+      goldLight: '#F5E6BE',
+      goldDark: '#705915',
+      goldGlow: 'rgba(212, 175, 55, 0.15)',
+      black: '#050505',
+      charcoal: '#121212',
+      charcoalElevated: '#1C1C1E',
+      cream: '#F5F5F0',
+      muted: '#94A3B8',
+      hairline: 'rgba(255, 255, 255, 0.08)',
+    },
+    semantic: {
+      success: '#10B981',
+      warning: '#F59E0B',
+      danger: '#EF4444',
+      royal: '#8B5CF6',
+    },
+  },
+  typography: {
+    fontFamily: {
+      display: '"Playfair Display", serif',
+      interface: '"Inter", sans-serif',
+      data: '"JetBrains Mono", monospace',
+    },
+    scale: {
+      displayXl: 'clamp(2.25rem, 4vw, 3.75rem)',
+      displayLg: '2.25rem',
+      displayMd: '1.5rem',
+      bodyLg: '1.125rem',
+      bodyBase: '1.0rem',
+      bodySm: '0.875rem',
+      metaXs: '0.75rem',
+    },
+  },
+  motion: {
+    duration: {
+      instant: 100,
+      micro: 200,
+      surface: 350,
+    },
+    easing: {
+      luxury: 'cubic-bezier(0.16, 1, 0.3, 1)',
+      drawer: 'cubic-bezier(0.32, 0.72, 0, 1)',
+    },
+  },
+};
+```
+
+---
+
+## 5. Exhaustive UI Behavioral Specifications
+
+### 5.1 Multi-Step Platform Installation Wizard (If decided for implementation)
+
+The installation wizard provides sovereign initialization when deploying SmartGuest for the first time. Its UI behavior adheres to strict state validation:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│               STAGE STEP SPINE (Progressive Disclosure)                │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+    ┌──────────────┬────────────────┼──────────────┬──────────────┐
+    │              │                │              │              │
+┌───▼────────┐ ┌───▼────────┐ ┌─────▼────────┐ ┌───▼────────┐ ┌───▼────────┐
+│  Stage 01  │ │  Stage 02  │ │   Stage 03   │ │  Stage 04  │ │  Stage 05  │
+│  Security  │ │  Super     │ │   Platform   │ │  Banking & │ │  SMTP &    │
+│  Handshake │ │  Admin     │ │   Branding   │ │  Payments  │ │  Dispatch  │
+└───┬────────┘ └───┬────────┘ └─────┬────────┘ └───┬────────┘ └───┬────────┘
+    │              │                │              │              │
+    └──────────────┴────────────────┼──────────────┴──────────────┘
+                                    │
+                      ┌─────────────▼─────────────┐
+                      │         Stage 06          │
+                      │  Genesis Review & Seal    │
+                      └───────────────────────────┘
+```
+
+#### Step Behavior Matrix
+1. **Stage 1 (Deployment Handshake)**:
+   - *State Transition*: Input is locked until user enters `DEPLOYMENT_SETUP_SECRET`. On submission, triggers timing-safe backend verification.
+   - *Active Visual Indicator*: Step badge transitions from hollow circle to metallic gold ring (`border-luxury-gold text-luxury-gold`).
+   - *Validation Gate*: Server returns a 15-minute cryptographically signed `setupToken`. Next buttons remain disabled until `setupToken` is held in memory.
+2. **Stage 2 (Super Administrator Credentials)**:
+   - *Password Entropy Meter*: Listens to `onChange` and dynamically computes character length ($\ge 8$), lowercase, uppercase, numerical, and symbol rules.
+   - *Visual Feedback*: Renders a 4-segment segmented bar that transitions from crimson (`bg-red-500`) to amber (`bg-yellow-500`) to gold (`bg-luxury-gold`) to emerald (`bg-emerald-500`).
+   - *State Caching*: If user navigates backward, password values remain safely cached in React state without requiring re-entry.
+3. **Stage 3 (Platform Identity & Regional Currency)**:
+   - *Interactive Segmented Selector*: Currency selector allows switching between `TZS` (Tanzanian Shilling, default), `USD`, `KES`, `EUR`, and `GBP`.
+   - *Live String Formatting*: Dynamically updates the preview of room suite deposits and commission splits.
+4. **Stage 4 (Banking & AzamPay Integration)**:
+   - *Environment Toggle*: Interactive toggle between `Sandbox (Testing)` and `Production (Live Settlement)`.
+   - *Secret Masking*: Keys are masked by default with an eye-icon toggle to reveal credentials.
+5. **Stage 5 (SMTP Communications Dispatch)**:
+   - *Port Dynamic Auto-Fill*: Selecting `TLS (Secure)` automatically suggests Port `465` or `587`.
+6. **Stage 6 (Genesis Review & Atomic Sealing)**:
+   - *Verification Manifest*: Aggregates all configured parameters in a read-only high-density inspection grid.
+   - *Execution Animation*: Clicking "Seal Platform & Launch" changes button to an active spinner (`animate-spin`), disables all form inputs, transmits the atomic payload, sets `.platform-installed.lock`, and transitions directly into the authenticated Super Admin executive console.
+
+---
+
+### 5.2 Modals, Drawers & Floating Glass Docks
+
+#### Modal Dialogue Choreography
+1. **Mounting**:
+   - `backdrop`: Fades from `opacity: 0` to `opacity: 1` over $200\text{ms}$ with `backdrop-filter: blur(20px)`.
+   - `content`: Scales from `transform: scale(0.97)` to `scale(1)` with `opacity: 0` to `opacity: 1` over $200\text{ms}$ (`ease-out`).
+2. **Dismissal**:
+   - Responds to `Escape` keypress, backdrop click, or explicit Close button.
+   - Reverses transformation with zero layout flash.
+3. **Focus Management**:
+   - Focus is automatically trapped within the modal container. `Tab` and `Shift+Tab` cycle strictly across modal affordances.
+
+#### Floating Sidebar Glass Dock (Layout.tsx)
+- **Desktop (md:)**: Floats as an offset glass dock (`h-[calc(100vh-2rem)] my-4 ml-4 w-72 rounded-[2rem] glass-panel`).
+- **Mobile (<md:)**: Slides from left off-screen (`-translate-x-[120%]` $\to$ `translate-x-0`) using `transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1)` with a full-viewport dimming scrim.
+
+---
+
+### 5.3 Form Controls, Validation & Live Feedback
+
+#### Input Field Behavioral States
+- **Idle State**: Hairline border `border-white/10`, background `bg-black/40`, placeholder `text-gray-600`.
+- **Hover State**: Border brightens to `border-white/20`.
+- **Focus State**: Hairline transitions to `border-luxury-gold`, surrounded by a 1px diffuse ambient gold halo ring (`ring-1 ring-luxury-gold/50`).
+- **Error State**: Border highlights in crimson (`border-red-500`), paired with a leading exclamation icon and descriptive red text below the input. (No color-only signaling).
+- **Disabled State**: Opacity drops to `opacity-40`, cursor changes to `cursor-not-allowed`, and pointer events are inhibited.
+
+```tsx example
+// Canonical Form Input Component Pattern
+<div className="space-y-1.5">
+  <label className="block text-xs uppercase tracking-wider text-gray-400 font-medium">
+    Platform Administrator Email
+  </label>
+  <div className="relative">
+    <input
+      type="email"
+      value={email}
+      onChange={(e) => setEmail(e.target.value)}
+      className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 
+                 text-luxury-cream text-sm placeholder-gray-600 focus:outline-none 
+                 focus:border-luxury-gold focus:ring-1 focus:ring-luxury-gold/50 
+                 transition-all duration-200"
+      placeholder="executive@smartguest.com"
+    />
+  </div>
+</div>
+```
+
+---
+
+### 5.4 Micro-Interactions, Hover Mechanics & Latency Budgets
+
+#### Button Press & Hover Physics
+- **Hover ($\le 150\text{ms}$)**: Smooth background brightness shift (`hover:bg-yellow-500` or `hover:border-luxury-gold`), paired with a slight upward translation (`hover:-translate-y-[1px]`).
+- **Active / Depressed ($\le 50\text{ms}$)**: Physical tactile press response using `active:scale-[0.98]` and `active:translate-y-0`.
+- **Loading State**: Button width is constrained to prevent layout shift (`min-w-[120px]`). Primary label text is replaced with a 16px metallic gold spinner (`animate-spin`).
+
+```tsx example
+// Canonical Primary Luxury Action Button
+<button
+  disabled={isLoading}
+  className="relative px-6 py-3 rounded-xl bg-gradient-to-r from-luxury-gold to-yellow-500 
+             text-black font-semibold text-sm tracking-wide shadow-lg shadow-luxury-gold/20 
+             hover:shadow-luxury-gold/30 hover:-translate-y-0.5 active:translate-y-0 
+             active:scale-[0.98] transition-all duration-200 disabled:opacity-50 
+             disabled:pointer-events-none disabled:transform-none flex items-center justify-center gap-2"
+>
+  {isLoading ? <SpinnerIcon className="animate-spin w-4 h-4 text-black" /> : 'Confirm Reservation'}
+</button>
+```
+
+---
+
+### 5.5 Toast Notifications & Real-Time Alerts
+
+- **Placement**: Fixed to top-right viewport (`top-6 right-6 z-50`).
+- **Stacking**: Stacked vertically with an 8px gap. Maximum 3 visible toasts.
+- **Dismissal Timing**: Automatic 4000ms timer with a thin gold hairline progress bar depleting from right to left.
+- **Pause on Hover**: Hovering over the notification pauses the countdown timer.
+
+---
+
+## 6. Component Pattern Catalog & Implementation Guide
+
+### A. Segmented Tab Filter (Interactive Button Group)
+```tsx example
+<div className="flex items-center gap-1 p-1 bg-black/40 border border-white/10 rounded-xl">
+  {['All Suites', 'Ocean Villa', 'Presidential', 'Penthouse'].map((tab) => (
+    <button
+      key={tab}
+      onClick={() => setActiveTab(tab)}
+      className={`px-4 py-2 text-xs font-medium rounded-lg transition-all duration-200 whitespace-nowrap shrink-0 ${
+        activeTab === tab
+          ? 'bg-luxury-gold text-black font-semibold shadow-md shadow-luxury-gold/20'
+          : 'text-gray-400 hover:text-white hover:bg-white/5'
+      }`}
+    >
+      {tab}
+    </button>
+  ))}
+</div>
+```
+
+### B. Glassmorphic Luxury Property Card
+```tsx example
+<div className="glass-card rounded-2xl p-6 border border-white/5 hover:border-luxury-gold/30 transition-all duration-300 group">
+  <div className="flex justify-between items-start mb-4">
+    <div>
+      <span className="text-[10px] uppercase tracking-widest text-luxury-gold font-medium">Mbezi Store</span>
+      <h3 className="font-serif text-xl text-white mt-1 group-hover:text-luxury-gold transition-colors">The Royal Coral Suite</h3>
+    </div>
+    <div className="text-right">
+      <span className="font-mono text-sm font-semibold text-white tabular-nums">TSh 1,850,000</span>
+      <p className="text-[10px] text-gray-500">per night / tax incl.</p>
+    </div>
+  </div>
+  
+  {/* Unboxed Metadata with Typographic Separator */}
+  <div className="flex items-center gap-2 text-xs text-gray-400 mb-6">
+    <span>Private Plunge Pool</span>
+    <span aria-hidden="true">·</span>
+    <span>Personal Butler</span>
+    <span aria-hidden="true">·</span>
+    <span>Helipad Access</span>
+  </div>
+
+  <button className="w-full py-2.5 rounded-xl border border-luxury-gold/40 text-luxury-gold text-xs font-semibold hover:bg-luxury-gold hover:text-black transition-all duration-200">
+    Save
+  </button>
+</div>
+```
+
+---
+
+## 7. Governance, Audit & Verification Checklist
+
+Before releasing or updating any UI view within SaaS POS cloud, verify compliance against this 14-point checklist:
+
+1. **Anti-Slop Cleanliness**: Zero `//` comment headers, zero mechanical snake_case prefixes, zero ornamental bottom telemetry tickers.
+2. **Zero-Pill Restraint**: Static metadata uses unboxed text separated by `·` or `/`; no pill badge capsules on informational content.
+3. **Top Bar Contract**: Maximum 3 zones separated by `gap-8` (1-line Brand wordmark, 4–5 single-line navigation links, 1 primary action button).
+4. **Single-Line Controls**: All buttons, links, and segmented tabs use `whitespace-nowrap shrink-0` with zero line breaks.
+5. **Color Discipline (60-30-10)**: 60% dark canvas, 30% structural surfaces/borders, 10% gold/intent accents.
+6. **No Hue-Only Signaling**: Errors and warnings pair explicit status colors with text and SVG iconography.
+7. **Typographic Hierarchy**: Distinct display face (`Playfair Display`), interface face (`Inter`), and monospace data (`JetBrains Mono` with `tabular-nums`).
+8. **Spatial Padding Math**: Container outer padding $\ge$ inner child gap (minimum 16px).
+9. **Nested Radius Equation**: $r_{\text{inner}} = r_{\text{outer}} - \text{padding}$.
+10. **Button Aspect Ratio**: Horizontal padding is approximately double the vertical padding (`py-2 px-4`).
+11. **Motion Latency Ceiling**: Micro-interactions complete in $\le 200\text{ms}$; compositor-only properties (`transform`, `opacity`) are animated.
+12. **WCAG AA Legibility**: Contrast ratios meet or exceed 4.5:1 for body copy and 3.0:1 for large display headlines.
+13. **Mobile Sticky Constraint**: Combined height of fixed/sticky elements does not exceed 15% of the mobile viewport.
+14. **Installation Wizard Lockdown**: All setup endpoints and wizard states permanently reject requests once initial platform installation is flagged.
+
+---
+*Authored and Approved for SaaS POS Cloud — Design Tokens & UI Behavior Standard Architecture Governance.*

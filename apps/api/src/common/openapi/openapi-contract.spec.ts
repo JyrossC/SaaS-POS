@@ -37,9 +37,9 @@ describe('generated OpenAPI contract', () => {
 
     expect(document.openapi).toBe('3.0.0');
     expect(document.info.title).toBe('SaaS POS API');
-    expect(Object.keys(document.paths)).toHaveLength(79);
-    expect(operations).toHaveLength(99);
-    expect(requestBodies).toHaveLength(40);
+    expect(Object.keys(document.paths)).toHaveLength(126);
+    expect(operations).toHaveLength(151);
+    expect(requestBodies).toHaveLength(68);
 
     for (const { path, method, operation } of requestBodies) {
       expect({
@@ -74,7 +74,47 @@ describe('generated OpenAPI contract', () => {
       .toContainEqual({ bearer: [] });
     expect(document.paths['/api/v1/platform/me']?.get?.security)
       .toContainEqual({ platformBearer: [] });
+    expect(document.paths['/api/v1/platform/stats']?.get?.security)
+      .toContainEqual({ platformBearer: [] });
+    expect(document.paths['/api/v1/platform/tenants']?.get?.security)
+      .toContainEqual({ platformBearer: [] });
+    expect(document.paths['/api/v1/platform/admins']?.get?.security)
+      .toContainEqual({ platformBearer: [] });
+    expect(document.paths['/api/v1/platform/plans']?.post?.security)
+      .toContainEqual({ platformBearer: [] });
+    expect(document.paths['/api/v1/platform/support-access']?.post?.security)
+      .toContainEqual({ platformBearer: [] });
+    expect(document.paths['/api/v1/platform/auth/invitation/accept']?.post?.security)
+      .toBeUndefined();
     expect(document.paths['/api/v1/auth/login']?.post?.security).toBeUndefined();
+    expect(document.paths['/api/v1/tenant/staff/{membershipId}/deactivate']?.patch?.security)
+      .toContainEqual({ bearer: [] });
+    expect(document.paths['/api/v1/tenant/roles']?.post?.security)
+      .toContainEqual({ bearer: [] });
+    expect(document.paths['/api/v1/tenant/roles/{roleId}']?.patch?.security)
+      .toContainEqual({ bearer: [] });
+    expect(document.paths['/api/v1/tenant/permissions']?.get?.security)
+      .toContainEqual({ bearer: [] });
+    expect(document.paths['/api/v1/tenant/settings']?.get?.security)
+      .toContainEqual({ bearer: [] });
+    expect(document.paths['/api/v1/tenant/settings']?.patch?.security)
+      .toContainEqual({ bearer: [] });
+    expect(document.paths['/api/v1/platform/fiscalization']?.get?.security)
+      .toContainEqual({ platformBearer: [] });
+    expect(document.paths['/api/v1/platform/fiscalization/providers/{jurisdiction}']?.put?.security)
+      .toContainEqual({ platformBearer: [] });
+    expect(document.paths['/api/v1/tenant/fiscalization']?.get?.security)
+      .toContainEqual({ bearer: [] });
+    expect(document.paths['/api/v1/tenant/fiscalization/profiles/{jurisdiction}']?.patch?.security)
+      .toContainEqual({ bearer: [] });
+    expect(document.paths['/api/v1/tenant/fiscalization/simulator/run']?.post?.security)
+      .toContainEqual({ bearer: [] });
+    expect(document.paths['/api/v1/tenant/fiscalization/addon-subscriptions']?.get?.security)
+      .toContainEqual({ bearer: [] });
+    expect(document.paths['/api/v1/tenant/fiscalization/addon-subscriptions/checkout']?.post?.security)
+      .toContainEqual({ bearer: [] });
+    expect(document.paths['/api/v1/tenant/fiscalization/addon-invoices/{invoiceId}/simulate-payment']?.post?.security)
+      .toContainEqual({ bearer: [] });
   });
 
   it('documents critical conditional, multipart, and response contracts', () => {
@@ -86,18 +126,64 @@ describe('generated OpenAPI contract', () => {
     ]?.post?.requestBody?.content?.['multipart/form-data']?.schema;
     const healthSchema = document.paths['/api/v1/health']?.get?.responses?.['200']
       ?.content?.['application/json']?.schema;
+    const rejectOperation = document.paths[
+      '/api/v1/platform/tenants/{tenantId}/reject'
+    ]?.post;
+    const rejectionSchema = rejectOperation?.requestBody?.content?.['application/json']?.schema;
+    const registrationResponse = document.paths['/api/v1/auth/register']?.post?.responses?.['201']
+      ?.content?.['application/json']?.schema;
+    const fiscalAddonPaymentResponse = document.paths[
+      '/api/v1/tenant/fiscalization/addon-invoices/{invoiceId}/simulate-payment'
+    ]?.post?.responses?.['200']?.content?.['application/json']?.schema;
+    const applicantStatusOperation = document.paths['/api/v1/tenant/onboarding/status']?.get;
+    const applicantUploadOperation = document.paths['/api/v1/tenant/onboarding/kyb-documents']?.post;
+    const applicantUploadSchema = applicantUploadOperation?.requestBody?.content?.['multipart/form-data']?.schema;
+    const businessSettingsSchema = document.paths['/api/v1/tenant/settings']?.get?.responses?.['200']
+      ?.content?.['application/json']?.schema;
 
     expect(reviewSchema?.oneOf).toHaveLength(2);
     expect(uploadSchema?.properties).toEqual(expect.objectContaining({
       document: { type: 'string', format: 'binary' },
     }));
     expect(healthSchema?.oneOf).toHaveLength(2);
+    expect(rejectionSchema?.properties).toEqual(expect.objectContaining({
+      reason: expect.objectContaining({ type: 'string', minLength: 1, maxLength: 1000 }),
+    }));
+    expect(rejectOperation?.security).toContainEqual({ platformBearer: [] });
+    expect(registrationResponse?.properties).toEqual(expect.objectContaining({
+      status: { type: 'string', enum: ['PENDING_REVIEW'] },
+    }));
+    expect(fiscalAddonPaymentResponse?.properties).toEqual(expect.objectContaining({
+      simulationOnly: { type: 'boolean', enum: [true] },
+      realChargeMade: { type: 'boolean', enum: [false] },
+    }));
+    expect(applicantStatusOperation?.security).toContainEqual({ bearer: [] });
+    expect(applicantUploadOperation?.security).toContainEqual({ bearer: [] });
+    expect(applicantUploadSchema?.properties).toEqual(expect.objectContaining({
+      document: { type: 'string', format: 'binary' },
+    }));
+    expect(businessSettingsSchema?.properties).toEqual(expect.objectContaining({
+      currency: { type: 'string', enum: ['TZS'] },
+      timezone: { type: 'string', enum: ['Africa/Dar_es_Salaam'] },
+      taxEnabled: { type: 'boolean', enum: [false] },
+    }));
+    expect(document.paths['/api/v1/tenant/fiscalization']?.get?.responses?.['200']
+      ?.content?.['application/json']?.schema?.properties).toEqual(expect.objectContaining({
+      taxCalculationEnabled: { type: 'boolean', enum: [false] },
+      fiscalReceiptIssuanceEnabled: { type: 'boolean', enum: [false] },
+    }));
+    expect(document.paths['/api/v1/tenant/fiscalization/simulator/run']?.post?.responses?.['200']
+      ?.content?.['application/json']?.schema?.properties).toEqual(expect.objectContaining({
+      simulationOnly: { type: 'boolean', enum: [true] },
+      officialReceiptIssued: { type: 'boolean', enum: [false] },
+      providerContacted: { type: 'boolean', enum: [false] },
+    }));
 
     const operationsWithResponseSchemas = operations.filter(({ operation }) =>
       Object.values(operation.responses ?? {}).some((response) =>
         Boolean(response.content?.['application/json']?.schema),
       ),
     );
-    expect(operationsWithResponseSchemas).toHaveLength(12);
+    expect(operationsWithResponseSchemas).toHaveLength(57);
   });
 });

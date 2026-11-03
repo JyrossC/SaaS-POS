@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -7,9 +6,10 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { LoadingState } from '../../components/ui/LoadingState';
 import { ErrorState } from '../../components/ui/ErrorState';
 import { Badge } from '../../components/ui/Badge';
-import { useSales, useCreateSale, useVoidSale, useStores, useProducts } from '../../hooks/api';
+import { useSales, useCreateSale, useStores, useProducts } from '../../hooks/api';
 import { toast } from 'react-hot-toast';
-import { RequirePermissions } from '../../components/auth/AuthProvider';
+import { formatTzs } from '../../lib/formatters';
+import { useAuth } from '../../components/auth/AuthProvider';
 
 interface SaleItemInput {
   productId: string;
@@ -26,12 +26,16 @@ interface PaymentInput {
 }
 
 export function SalesPage() {
-  const navigate = useNavigate();
+  const { hasPermission } = useAuth();
+  const canCreateSale = hasPermission('sales.create')
+    && hasPermission('stores.view')
+    && hasPermission('products.view');
   const { data, isLoading, isError, error } = useSales();
-  const { data: stores, isLoading: storesLoading } = useStores();
-  const { data: products, isLoading: productsLoading } = useProducts();
+  const storesQuery = useStores(undefined, canCreateSale);
+  const productsQuery = useProducts(undefined, canCreateSale);
+  const stores = storesQuery.data;
+  const products = productsQuery.data;
   const createSale = useCreateSale();
-  const voidSale = useVoidSale();
 
   const [items, setItems] = useState<SaleItemInput[]>([
     { productId: '', productName: '', sku: '', quantity: '1', unitPrice: '0' },
@@ -44,19 +48,26 @@ export function SalesPage() {
   const [notes, setNotes] = useState('');
   const [promoCode, setPromoCode] = useState('');
 
-  const loading = isLoading || storesLoading || productsLoading;
+  const loading = isLoading || storesQuery.isLoading || productsQuery.isLoading;
   if (loading) return <LoadingState message="Loading sales..." />;
-  if (isError) return <ErrorState title="Failed to load sales" description={error?.message} />;
+  const requestError = error ?? storesQuery.error ?? productsQuery.error;
+  if (isError || (canCreateSale && (storesQuery.isError || productsQuery.isError))) {
+    return <ErrorState title="Could not load sales" description={requestError?.message} />;
+  }
 
   const storeOptions = stores?.items || [];
   const productOptions = products?.items || [];
 
-  const total = items.reduce(
-    (sum, item) => sum + parseFloat(item.unitPrice) * parseFloat(item.quantity),
-    0,
-  );
+  const total = items.reduce((sum, item) => {
+    const price = Number(item.unitPrice);
+    const quantity = Number(item.quantity);
+    return sum + (Number.isFinite(price) && Number.isFinite(quantity) ? price * quantity : 0);
+  }, 0);
 
-  const totalPayment = payments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
+  const totalPayment = payments.reduce((sum, payment) => {
+    const amount = Number(payment.amount);
+    return sum + (Number.isFinite(amount) ? amount : 0);
+  }, 0);
 
   const handleAddItem = () => {
     setItems([
@@ -79,12 +90,15 @@ export function SalesPage() {
 
   const handleProductChange = (index: number, productId: string) => {
     const selected = productOptions.find((p: any) => p.id === productId);
-    const newItems = [...items];
-    newItems[index].productId = productId;
-    newItems[index].sku = selected?.sku || '';
-    newItems[index].productName = selected?.name || '';
-    newItems[index].unitPrice = selected?.sellingPrice?.toString() || '0';
-    setItems(newItems);
+    setItems((current) => current.map((item, itemIndex) => itemIndex === index
+      ? {
+          ...item,
+          productId,
+          sku: selected?.sku || '',
+          productName: selected?.name || '',
+          unitPrice: selected?.sellingPrice?.toString() || '0',
+        }
+      : item));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,17 +107,20 @@ export function SalesPage() {
       toast.error('Please select a store');
       return;
     }
-    const paymentTotal = payments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
-    if (Math.abs(paymentTotal - total) > 0.01) {
-      toast.error('Payment total must equal sale total');
-      return;
-    }
     if (items.some((i) => !i.productId)) {
       toast.error('Please select products for all items');
       return;
     }
+    if (items.some((item) => !Number.isFinite(Number(item.quantity)) || Number(item.quantity) <= 0)) {
+      toast.error('Enter a positive quantity for every sale item.');
+      return;
+    }
+    if (payments.some((payment) => !Number.isFinite(Number(payment.amount)) || Number(payment.amount) < 0)) {
+      toast.error('Enter a valid non-negative amount for each payment.');
+      return;
+    }
 
-      try {
+    try {
       await createSale.mutateAsync({
         storeId,
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
@@ -138,7 +155,7 @@ export function SalesPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="col-span-1 lg:col-span-2 p-6">
+        {canCreateSale && <Card className="col-span-1 lg:col-span-2 p-6">
           <h2 className="text-heading-h4 text-primary mb-6">New Sale</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -194,16 +211,20 @@ export function SalesPage() {
                   <Input
                     label="SKU"
                     value={item.sku}
+                    readOnly
                     className="w-40"
                   />
                   <Input
                     label="Name"
                     value={item.productName}
+                    readOnly
                     className="w-64"
                   />
                   <Input
                     label="Qty"
                     type="number"
+                    min="0.0001"
+                    step="0.0001"
                     value={item.quantity}
                     onChange={(e) => {
                       const newItems = [...items];
@@ -212,19 +233,9 @@ export function SalesPage() {
                     }}
                     className="w-24"
                   />
-                  <Input
-                    label="Unit Price"
-                    type="number"
-                    step="0.01"
-                    value={item.unitPrice}
-                    onChange={(e) => {
-                      const newItems = [...items];
-                      newItems[index].unitPrice = e.target.value;
-                      setItems(newItems);
-                    }}
-                    className="w-32"
-                  />
+                  <Input label="Unit Price" type="number" value={item.unitPrice} readOnly className="w-32" />
                   <Button
+                    type="button"
                     variant="danger"
                     size="sm"
                     onClick={() => handleRemoveItem(index)}
@@ -260,6 +271,7 @@ export function SalesPage() {
                   <Input
                     label="Amount"
                     type="number"
+                    min="0"
                     step="0.01"
                     value={payment.amount}
                     onChange={(e) => {
@@ -281,6 +293,7 @@ export function SalesPage() {
                     className="w-48"
                   />
                   <Button
+                    type="button"
                     variant="danger"
                     size="sm"
                     onClick={() => handleRemovePayment(index)}
@@ -299,13 +312,14 @@ export function SalesPage() {
               <div className="text-right">
                 <div className="text-body-sm text-muted">Sale Total</div>
                 <div className="text-heading-h2 text-primary font-mono tabular-nums">
-                  {total.toFixed(2)}
+                  {formatTzs(total)}
                 </div>
+                <div className="text-caption text-muted">Estimated subtotal; the server validates discounts and final due.</div>
               </div>
               <div className="text-right">
                 <div className="text-body-sm text-muted">Payment Total</div>
                 <div className="text-heading-h2 text-success font-mono tabular-nums">
-                  {totalPayment.toFixed(2)}
+                  {formatTzs(totalPayment)}
                 </div>
               </div>
             </div>
@@ -321,7 +335,7 @@ export function SalesPage() {
               Complete Sale
             </Button>
           </form>
-        </Card>
+        </Card>}
 
         <Card className="col-span-1 lg:col-span-1 p-6 h-full flex flex-col">
           <h2 className="text-heading-h4 text-primary mb-6">Recent Sales</h2>
@@ -347,7 +361,7 @@ export function SalesPage() {
                       <td className="font-mono text-sm">{sale.saleNumber}</td>
                       <td>{sale.store?.name || '—'}</td>
                       <td className="text-right font-mono tabular-nums">
-                        {parseFloat(sale.totalAmount).toFixed(2)}
+                        {formatTzs(sale.totalAmount)}
                       </td>
                       <td>
                         <Badge variant={sale.status === 'COMPLETED' ? 'success' : 'danger'}>

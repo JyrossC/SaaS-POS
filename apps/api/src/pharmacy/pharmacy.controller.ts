@@ -117,6 +117,19 @@ export class PharmacyController {
     );
   }
 
+  @Get('quarantine')
+  @RequirePermissions('pharmacy.batches.view')
+  async listActiveQuarantines(@Req() request: RequestWithUser) {
+    const user = request.user;
+    if (!user) throw new UnauthorizedException('Authenticated user context is required.');
+    const context = await this.entitlementService.getContext(user.tenantId);
+    this.entitlementService.assertModuleAccess(user, context, 'pharmacy');
+    return this.pharmacyService.listActiveQuarantines(
+      user.tenantId,
+      user.allStoreAccess ? undefined : user.storeIds,
+    );
+  }
+
   @Get('batches/expiring')
   @RequirePermissions('pharmacy.batches.view')
   @UsePipes(new JoiValidationPipe(daysQuerySchema))

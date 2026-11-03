@@ -20,15 +20,15 @@ export class PermissionGuard implements CanActivate {
       context.getClass(),
     ]) ?? [];
 
-    if (requiredPermissions.length === 0) {
-      return true;
-    }
-
     const request = context.switchToHttp().getRequest<Request & { user?: AuthenticatedUser }>();
     const user = request.user;
 
     if (!user) {
       throw new UnauthorizedException('Authenticated user context is required.');
+    }
+
+    if (user.tenantStatus !== 'ACTIVE') {
+      throw new ForbiddenException('Tenant operations are unavailable until platform approval.');
     }
 
     const grantedPermissions = new Set(user.permissions ?? []);

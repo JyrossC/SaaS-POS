@@ -172,11 +172,13 @@ describe('Phase 3: Concurrency Safety Integration Tests', () => {
       id: user.id,
       membershipId: membership.id,
       tenantId: tenant.id,
+      tenantStatus: 'ACTIVE',
       email: user.email,
       role: 'Owner',
       roleNames: ['Owner'],
       permissions: ['sales.create', 'sales.view', 'stores.create', 'staff.invite', 'sales.refund'],
       storeIds: [store.id],
+      mfaEnabled: false,
       allStoreAccess: true,
     };
   });

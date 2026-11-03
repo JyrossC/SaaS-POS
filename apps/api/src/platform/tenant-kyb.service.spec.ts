@@ -32,13 +32,14 @@ describe('TenantKybService', () => {
   const transaction = {
     tenantKybDocument: { create: jest.fn(), update: jest.fn(), deleteMany: jest.fn() },
     platformAuditLog: { create: jest.fn() },
+    auditLog: { create: jest.fn() },
     tenant: { updateMany: jest.fn() },
   };
   const prisma = {
     $transaction: jest.fn(),
     tenantKybDocument: { findMany: jest.fn(), findFirst: jest.fn() },
     tenant: { findUnique: jest.fn() },
-    platformAuditLog: { create: jest.fn() },
+    platformAuditLog: { create: jest.fn(), findFirst: jest.fn() },
   };
   const previousStoragePath = process.env.PRIVATE_STORAGE_PATH;
   const previousEncryptionKey = process.env.KYB_DOCUMENT_ENCRYPTION_KEY;
@@ -92,8 +93,10 @@ describe('TenantKybService', () => {
     });
     transaction.tenantKybDocument.deleteMany.mockResolvedValue({ count: 1 });
     transaction.platformAuditLog.create.mockResolvedValue({});
+    transaction.auditLog.create.mockResolvedValue({});
     transaction.tenant.updateMany.mockResolvedValue({ count: 1 });
     prisma.platformAuditLog.create.mockResolvedValue({});
+    prisma.platformAuditLog.findFirst.mockResolvedValue(null);
     prisma.tenant.findUnique.mockResolvedValue({ id: tenantId, status: 'PENDING_REVIEW' });
     service = new TenantKybService(prisma as unknown as PrismaService);
   });
@@ -159,6 +162,50 @@ describe('TenantKybService', () => {
     });
   });
 
+  it('audits a tenant owner KYB upload against the tenant audit log', async () => {
+    const content = createPng();
+    await service.uploadForTenantOwner(
+      tenantId,
+      'owner-membership',
+      'owner-user',
+      'Business registration',
+      { originalname: 'registration.png', buffer: content, size: content.length },
+    );
+
+    expect(transaction.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          tenantId,
+          actorMembershipId: 'owner-membership',
+          actorUserId: 'owner-user',
+          action: 'tenant.kyb_document_uploaded',
+        }),
+      }),
+    );
+    expect(transaction.platformAuditLog.create).not.toHaveBeenCalled();
+  });
+
+  it('returns the rejection reason and document review details to the applicant status view', async () => {
+    prisma.tenant.findUnique.mockResolvedValue({
+      name: 'Rejected tenant',
+      slug: 'rejected-tenant',
+      status: 'REJECTED',
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      subscription: { status: 'TRIALING' },
+      kybDocuments: [],
+    });
+    prisma.platformAuditLog.findFirst.mockResolvedValue({
+      metadata: { reason: 'Missing business registration.' },
+    });
+
+    await expect(service.getApplicantStatus(tenantId)).resolves.toEqual(
+      expect.objectContaining({
+        status: 'REJECTED',
+        rejectionReason: 'Missing business registration.',
+      }),
+    );
+  });
+
   it('rejects content that does not match an allowed extension', async () => {
     await expect(
       service.upload(tenantId, platformAdminId, 'Registration', {
@@ -221,7 +268,43 @@ describe('TenantKybService', () => {
     );
   });
 
-  it('purges expired encrypted files and records a platform audit event', async () => {
+  it('rejects a pending tenant and audits the required reason', async () => {
+    prisma.tenant.findUnique.mockResolvedValue({
+      id: tenantId,
+      status: 'PENDING_REVIEW',
+    });
+
+    await expect(
+      service.rejectTenant(tenantId, platformAdminId, 'Required business details were missing.'),
+    ).resolves.toBeUndefined();
+    expect(transaction.tenant.updateMany).toHaveBeenCalledWith({
+      where: { id: tenantId, status: 'PENDING_REVIEW' },
+      data: { status: 'REJECTED' },
+    });
+    expect(transaction.platformAuditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: 'platform.tenant.rejected',
+          resourceId: tenantId,
+          metadata: { reason: 'Required business details were missing.' },
+        }),
+      }),
+    );
+  });
+
+  it('does not reject tenants that are no longer pending review', async () => {
+    prisma.tenant.findUnique.mockResolvedValue({
+      id: tenantId,
+      status: 'ACTIVE',
+    });
+
+    await expect(
+      service.rejectTenant(tenantId, platformAdminId, 'Rejected'),
+    ).rejects.toThrow(ConflictException);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('purges expired encrypted files and records a platform audit event', async () =>  {
     await mkdir(join(storagePath, 'kyb'));
     const expiredId = 'expired-document';
     const filePath = join(storagePath, 'kyb', `${expiredId}.enc`);

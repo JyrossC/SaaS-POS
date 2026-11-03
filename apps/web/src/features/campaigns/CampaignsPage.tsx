@@ -20,6 +20,11 @@ import { LoadingState } from '../../components/ui/LoadingState';
 import { ErrorState } from '../../components/ui/ErrorState';
 import { Badge } from '../../components/ui/Badge';
 import { toast } from 'react-hot-toast';
+import {
+  formatBusinessDate,
+  formatTzs,
+  getBusinessDateInputValue,
+} from '../../lib/formatters';
 
 const CAMPAIGN_TYPES = [
   { value: 'PERCENTAGE_DISCOUNT', label: 'Percentage Discount' },
@@ -79,7 +84,7 @@ export function CampaignsPage() {
     getQuantity: '',
     customerTargeting: 'ALL_CUSTOMERS',
     segmentIds: [],
-    startDate: new Date().toISOString().split('T')[0],
+    startDate: getBusinessDateInputValue(),
     endDate: '',
     maxUses: '',
     maxUsesPerCustomer: '',
@@ -120,7 +125,7 @@ export function CampaignsPage() {
         name: '', description: '', type: 'PERCENTAGE_DISCOUNT', mechanism: 'BOTH',
         promoCode: '', value: '', buyQuantity: '', getQuantity: '',
         customerTargeting: 'ALL_CUSTOMERS', segmentIds: [],
-        startDate: new Date().toISOString().split('T')[0], endDate: '',
+        startDate: getBusinessDateInputValue(), endDate: '',
         maxUses: '', maxUsesPerCustomer: '', stackingRule: 'STACKABLE', productIds: [],
       });
       queryClient.invalidateQueries({ queryKey: ['campaigns'] });
@@ -208,8 +213,6 @@ export function CampaignsPage() {
     }
   };
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(val);
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -251,14 +254,14 @@ export function CampaignsPage() {
                   <td>{c.type}</td>
                   <td>{c.mechanism}</td>
                   <td className="font-mono text-sm">{c.promoCode || '—'}</td>
-                  <td className="text-right">{c.type === 'PERCENTAGE_DISCOUNT' ? c.value + '%' : formatCurrency(Number(c.value))}</td>
+                  <td className="text-right">{c.type === 'PERCENTAGE_DISCOUNT' ? c.value + '%' : formatTzs(c.value)}</td>
                   <td>
                     <Badge variant={(STATUSES.find(s => s.value === c.status)?.variant || 'success') as 'success' | 'warning' | 'danger'}>
                       {c.status}
                     </Badge>
                   </td>
                   <td className="text-body-sm text-muted font-mono">
-                    {new Date(c.startDate).toLocaleDateString()} - {c.endDate ? new Date(c.endDate).toLocaleDateString() : 'Ongoing'}
+                    {formatBusinessDate(c.startDate)} - {c.endDate ? formatBusinessDate(c.endDate) : 'Ongoing'}
                   </td>
                   <td className="text-right font-mono tabular-nums text-sm">{c._count?.usages || 0}</td>
                   <td>

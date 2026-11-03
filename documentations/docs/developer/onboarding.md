@@ -1,6 +1,14 @@
 # Onboarding — Local Setup
 
-Use these steps to prepare a local development environment. The project is not production-ready; remaining blockers are tracked in the [production-readiness roadmap](../../production-readiness-roadmap.md). The API suite currently has 18 suites and 88 tests, including database-backed HTTP integration tests; API docs include all 40 request-body schemas, but response schemas are currently explicit for only 12 operations.
+Use these steps to prepare a local development environment. The project is not production-ready; remaining blockers are tracked in the [production-readiness roadmap](../../production-readiness-roadmap.md). The API suite currently has 24 suites and 135 tests, including database-backed HTTP integration for tenant business settings, platform management, membership deactivation, tenant role administration, fiscal simulator boundaries, and test-only fiscal billing; API docs include all 68 request-body schemas across 126 paths / 151 operations, with explicit response schemas for 57 operations.
+
+Tenant self-registration creates a pending application without issuing a session. The registration API accepts `tenantName` (2–120 characters), `tenantSlug` (2–60 lowercase letters, digits, and single hyphens), `businessType` (`RETAIL`, `PHARMACY`, or `HYBRID`), `ownerName` (2–120 characters), `ownerEmail`, `password` (12–128 characters), and `planCode` (`STARTER`, `GROWTH`, or `BUSINESS` from the system catalog). Slugs and email addresses are normalized to lowercase. The form enforces these constraints before submission and displays API validation details beside the affected fields.
+
+Registration creates the tenant in `PENDING_REVIEW`, provisions its plan/trial and owner membership, and sends a one-time email verification link; it does not issue a session. The owner must verify the email before signing in with tenant slug, email, and password to reach the restricted onboarding portal to upload encrypted KYB documents and view status, document review notes, or a rejection reason. The sign-in page can request a new verification email. No operational tenant APIs are available until platform approval. Approval requires accepted KYB documentation and a current plan or trial. Rejection is recorded with a platform-audited reason.
+
+There are no default platform-administrator credentials. On a fresh installation, open `/platform/review` and use the first-time setup form. It submits `platformName`, `adminName`, `adminEmail`, and a 12–128-character password to `POST /api/v1/installation/initialize`, with the deployment's `INSTALLATION_SECRET` in the `X-Installation-Secret` header. Choose and save the administrator email and password; those become the sign-in credentials. The setup secret is held only in page memory for the request, and the backend allows initialization only once. On first sign-in, the platform administrator must enroll an authenticator and save the one-time recovery codes before the review portal opens. Later sign-ins require an authenticator or unused recovery code. Never commit or share the installation secret or administrator password. The tenant-review UI is implemented; wider platform provisioning and administrator lifecycle management remain in progress.
+
+Tenant accounts use optional authenticator-app MFA. The signed-in Security page supports enrollment, one-time recovery codes, and disabling MFA after confirming an authenticator or recovery code. Access tokens are held in memory; tenant and platform sessions use separate rotating HttpOnly refresh cookies. Access tokens last 15 minutes; refresh sessions have a 7-day idle and 30-day absolute expiry. Logout and password reset revoke sessions. Verification links expire after 24 hours and are single-use.
 
 ## Prerequisites
 
@@ -58,7 +66,7 @@ There is no tracked `apps/web/.env.example`. The API reads root `.env`; the web 
 VITE_API_BASE_URL=http://localhost:3000/api/v1
 ```
 
-The API currently requires `DATABASE_URL`, `JWT_SECRET` (at least 32 characters), `INSTALLATION_SECRET` (at least 32 characters), and a valid base64-encoded 32-byte `KYB_DOCUMENT_ENCRYPTION_KEY`. Review [environment-variables.md](environment-variables.md) for which settings are consumed versus still aspirational. Never commit real secrets or local `.env` files.
+The API currently requires `DATABASE_URL`, `JWT_SECRET` (at least 32 characters), `INSTALLATION_SECRET` (at least 32 characters), and a valid base64-encoded 32-byte `KYB_DOCUMENT_ENCRYPTION_KEY`. Production also requires an independent `MFA_ENCRYPTION_KEY` of at least 32 characters; keep it stable and backed up because it encrypts enrolled authenticator secrets. Review [environment-variables.md](environment-variables.md) for which settings are consumed versus still aspirational. Never commit real secrets or local `.env` files.
 
 ## 5. Apply database migrations
 
@@ -122,7 +130,7 @@ npm run build:api
 npm run build:web
 ```
 
-The web/API builds, root typecheck, lint, six mocked browser smoke tests, and the 18-suite/88-test API suite pass locally. API integration tests exercise live HTTP requests and verify database persistence. The web build still reports a non-blocking large-chunk warning. To run `npm test`, configure the dedicated `_test` database as described in the development workflow; never use the development database for tests.
+The web/API builds, root typecheck, lint, all 20 mocked browser tests, and the 20-suite/119-test API suite pass locally. API integration tests exercise live HTTP requests and verify database persistence, including verification, platform MFA, session refresh/replay, logout, and password recovery. The web build still reports a non-blocking large-chunk warning. To run `npm test`, configure the dedicated `_test` database as described in the development workflow; never use the development database for tests.
 
 ## Troubleshooting
 

@@ -4,14 +4,14 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'outline' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
-  disabled?: boolean;
-  onClick?: () => void;
+  loadingLabel?: string;
 }
 
 export function Button({
   variant = 'primary',
   size = 'md',
   isLoading = false,
+  loadingLabel = 'Loading',
   disabled = false,
   children,
   className = '',
@@ -22,12 +22,13 @@ export function Button({
     <button
       className={`${baseCls} ${className}`}
       disabled={disabled || isLoading}
+      aria-busy={isLoading || undefined}
       {...props}
     >
       {isLoading ? (
         <>
-          <span className="spinner" style={{ width: 16, height: 16, borderWidth: '2px' }} />
-          <span className="text-muted text-body-sm">Loading...</span>
+          <span className="spinner button-spinner" aria-hidden="true" />
+          <span className="sr-only">{loadingLabel}</span>
         </>
       ) : (
         children

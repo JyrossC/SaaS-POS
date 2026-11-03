@@ -6,13 +6,13 @@ This is an evidence-based project status snapshot for the SaaS Multi-Tenant POS 
 
 | Workstream | Status | Evidence / next gate |
 |---|---|---|
-| Requirements and architecture | Partial | Blueprint exists; launch, financial, billing, offline, and pharmacy decisions remain open. |
-| Documentation and tracking | In progress | Onboarding reflects Node 24 and native PostgreSQL; an isolated Node 24 clean checkout passed through API/web HTTP smoke checks. Remote CI and dependency-audit remediation remain open. Use the roadmap for current acceptance status. |
+| Requirements and architecture | Partial | Product baselines for locale, weighted-average costing, offline policy, customer data, and pharmacy scope are recorded; detailed tax/accounting, payment-provider, privacy, and pharmacy-compliance approvals remain open. |
+| Documentation and tracking | In progress | Onboarding reflects Node 24 and native PostgreSQL; isolated clean-checkout verification passed. Current R2.6 evidence is recorded in the roadmap; this work remains local and remote CI is pending. Use the roadmap for current acceptance status. |
 | Application implementation | Partial | Substantial API code exists, but complete workflows, UI coverage, and end-to-end acceptance are not established. |
-| Web/API build and quality | Passing locally / incomplete for release | Node 24 clean-copy typecheck, lint, builds, and tests pass; web bundle has a non-blocking chunk-size warning; OpenAPI covers 79 paths / 99 operations and all 40 request bodies, but only 12 operations have explicit response schemas. |
-| API automated tests | Passing locally | 18 suites and 88 tests pass against a fresh isolated `_test` database, including HTTP integration coverage; remote CI remains unverified. |
-| Web browser smoke tests | Passing locally | Six Playwright tests pass with mocked API responses; full backend-integrated business-flow browser acceptance remains outstanding. |
-| Database migrations | Verified locally / CI pending | All 16 migrations applied to a newly created disposable PostgreSQL database under Node 24; Prisma reports status up to date. CI now provisions native PostgreSQL and checks status after deployment; remote CI remains unverified. |
+| Web/API build and quality | Passing locally / incomplete for release | Node 24 typecheck, lint, and production builds pass; web bundle has a non-blocking chunk-size warning; OpenAPI covers 126 paths / 151 operations, all 68 request bodies, and 57 explicit response schemas. |
+| API automated tests | Passing locally | All 24 suites and 135 tests pass against the isolated `saas_pos_test` database, including billing checkout/payment idempotency, renewal failure/retry, cancellation/resume, test-only payment behavior, and the OpenAPI contract. Remote CI verification remains pending. |
+| Web browser smoke tests | Partially passing locally | 28 of 29 mocked Playwright tests pass, including all three fiscal UI tests. One unrelated view-only Sales navigation test fails because its non-exact `Sales` locator also matches `Open sales`; backend-integrated browser acceptance remains outstanding. |
+| Database migrations | Verified locally / CI pending | All 29 migrations are applied to the dedicated local PostgreSQL test database under Node 24. Remote CI verification remains pending. |
 | Production deployment and operations | Not verified | CI uses native PostgreSQL and application build artifacts; production deployment, monitoring, restore drills, and release rollback require evidence. |
 
 This snapshot reflects observed repository and command evidence, not a claim that every behavior has been audited. Update it when reproducible evidence changes.

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../lib/api-client';
+import { useAuth } from '../../components/auth/AuthProvider';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Input';
@@ -9,18 +10,22 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { LoadingState } from '../../components/ui/LoadingState';
 import { ErrorState } from '../../components/ui/ErrorState';
 import { toast } from 'react-hot-toast';
+import { formatTzs } from '../../lib/formatters';
 
 interface Product {
   id: string;
   sku: string;
   name: string;
   baseUnit: string;
-  sellingPrice: number;
-  costPrice?: number | null;
+  sellingPrice: number | string;
+  costPrice?: number | string | null;
   isActive: boolean;
 }
 
-export function ProductsPage({ onCreateSale }: { onCreateSale?: () => void } = {}) {
+export function ProductsPage() {
+  const { hasPermission } = useAuth();
+  const queryClient = useQueryClient();
+  const canCreateProduct = hasPermission('products.create');
   const [creating, setCreating] = useState(false);
   const [newProduct, setNewProduct] = useState({
     sku: '',
@@ -68,6 +73,7 @@ export function ProductsPage({ onCreateSale }: { onCreateSale?: () => void } = {
         sellingPrice: newProduct.sellingPrice,
         costPrice: newProduct.costPrice || null,
       });
+      await queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Product created');
       setCreating(false);
       setNewProduct({ sku: '', name: '', description: '', baseUnit: 'unit', sellingPrice: '0', costPrice: '0' });
@@ -88,24 +94,19 @@ export function ProductsPage({ onCreateSale }: { onCreateSale?: () => void } = {
           <h1 className="text-heading-h1 text-primary">Product Catalogue</h1>
           <p className="text-body-sm text-muted">Manage your product inventory</p>
         </div>
-        <div className="flex gap-3">
+        {canCreateProduct && (
           <Button
             variant="primary"
             size="md"
+            type="button"
             onClick={() => setCreating(!creating)}
-            disabled={creating}
           >
             {creating ? 'Cancel' : 'Add Product'}
           </Button>
-          {onCreateSale && (
-            <Button variant="primary" size="md" onClick={onCreateSale}>
-              New Sale
-            </Button>
-          )}
-        </div>
+        )}
       </div>
 
-      {creating && (
+      {canCreateProduct && creating && (
         <Card className="col-span-1 lg:col-span-3 p-6">
           <h2 className="text-heading-h4 text-primary mb-6">Add New Product</h2>
           <form onSubmit={handleCreateSubmit} className="space-y-4">
@@ -136,6 +137,7 @@ export function ProductsPage({ onCreateSale }: { onCreateSale?: () => void } = {
               <Input
                 label="Selling Price"
                 type="number"
+                min="0"
                 step="0.01"
                 value={newProduct.sellingPrice}
                 onChange={(e) => setNewProduct({ ...newProduct, sellingPrice: e.target.value })}
@@ -144,6 +146,7 @@ export function ProductsPage({ onCreateSale }: { onCreateSale?: () => void } = {
               <Input
                 label="Cost Price"
                 type="number"
+                min="0"
                 step="0.01"
                 value={newProduct.costPrice}
                 onChange={(e) => setNewProduct({ ...newProduct, costPrice: e.target.value })}
@@ -180,9 +183,9 @@ export function ProductsPage({ onCreateSale }: { onCreateSale?: () => void } = {
                   <td className="font-mono text-sm">{p.sku}</td>
                   <td>{p.name}</td>
                   <td>{p.baseUnit}</td>
-                  <td className="text-right">{p.sellingPrice.toFixed(2)}</td>
+                  <td className="text-right font-mono tabular-nums">{formatTzs(p.sellingPrice)}</td>
                   <td className="text-right">
-                    {p.costPrice !== null && p.costPrice !== undefined ? p.costPrice.toFixed(2) : '—'}
+                    {p.costPrice !== null && p.costPrice !== undefined ? formatTzs(p.costPrice) : '—'}
                   </td>
                   <td>
                     <Badge variant={p.isActive ? 'success' : 'danger'}>

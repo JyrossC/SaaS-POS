@@ -48,7 +48,7 @@ npm run test:pharmacy
 npm run lint
 ```
 
-The root test command runs the six Chromium Playwright smoke tests (which mock API calls) followed by the API Jest suite. The API suite includes live HTTP integration tests. Install the browser once with `npx playwright install chromium` if it is missing. The API suite requires the isolated `_test` database described above; never run it against a development or production database. The current local baseline is six browser tests and 18 API suites/88 tests passing. The dedicated API test wrappers run under the API workspace, for example:
+The root test command runs the 29 Chromium Playwright tests (which mock API calls) followed by the API Jest suite. The API suite includes live HTTP integration tests for verification, MFA, password recovery, refresh rotation/replay, session revocation, tenant business settings, platform lifecycle, membership deactivation, tenant role administration with cross-tenant and privilege-escalation checks, fiscal simulator boundaries, and the test-only fiscal add-on billing lifecycle. Install the browser once with `npx playwright install chromium` if it is missing. The API suite requires the isolated `saas_pos_test` database described above; never run it against a development or production database. The current API result is 24 suites/135 tests passing. The latest full browser run passed 28/29; one unrelated view-only Sales test has an ambiguous non-exact `Sales` locator that also matches `Open sales`. All three fiscal browser tests pass. The dedicated API test wrappers run under the API workspace, for example:
 
 ```bash
 npm --workspace apps/api run test
@@ -72,7 +72,7 @@ Install and start PostgreSQL 15+ directly on the development machine before runn
 
 In development, Swagger UI is served at `http://localhost:3000/api/v1/docs`; its OpenAPI JSON is at `/api/v1/docs-json`. Both routes are disabled when `NODE_ENV=production`.
 
-Run `npm run docs:api` to rebuild the API and regenerate the checked-in contract at `documentations/api/openapi.json`. The generator initializes `AppModule` and Prisma, so use a local or disposable test database by setting `DATABASE_URL`; never point documentation generation at production. The current spec documents all 40 request bodies (21 from Joi validation schemas and 19 from declared TypeScript inputs); 12 operations have explicit response schemas, and broader response coverage remains incomplete.
+Run `npm run docs:api` to rebuild the API and regenerate the checked-in contract at `documentations/api/openapi.json`. The generator initializes `AppModule` and Prisma, so use a local or disposable test database by setting `DATABASE_URL`; never point documentation generation at production. The current spec covers 126 paths / 151 operations and documents all 68 request bodies; 57 operations have explicit response schemas, and broader response coverage remains incomplete.
 
 `npm run docs:api:serve` starts the already-built API. Background job processing code exists, but there are no root `jobs:*` commands; the email/report handlers are placeholders.
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import {
   BrowserRouter,
   Navigate,
@@ -8,7 +9,12 @@ import {
   useNavigate,
 } from 'react-router-dom';
 import { LoginPage } from './features/auth/LoginPage';
+import { VerifyEmailPage } from './features/auth/VerifyEmailPage';
+import { AccountSecurityPage } from './features/auth/AccountSecurityPage';
 import { RegisterPage } from './features/auth/RegisterPage';
+import { TenantOnboardingPage } from './features/auth/TenantOnboardingPage';
+import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage';
+import { ResetPasswordPage } from './features/auth/ResetPasswordPage';
 import { LandingPage } from './features/landing/LandingPage';
 import { Sidebar } from './components/layout/Sidebar';
 import { Topbar } from './components/layout/Topbar';
@@ -21,7 +27,13 @@ import { ReturnsPage } from './features/returns/ReturnsPage';
 import { PharmacyPage } from './features/pharmacy/PharmacyPage';
 import { ReportsPage } from './features/reports/ReportsPage';
 import { CampaignsPage } from './features/campaigns/CampaignsPage';
-import { Card } from './components/ui/Card';
+import { StoresPage } from './features/stores/StoresPage';
+import { InventoryPage } from './features/inventory/InventoryPage';
+import { RolesPage } from './features/roles/RolesPage';
+import { BusinessSettingsPage } from './features/settings/BusinessSettingsPage';
+import { PlatformReviewPage } from './features/platform/PlatformReviewPage';
+import { PlatformInvitationPage } from './features/platform/PlatformInvitationPage';
+import { Button } from './components/ui/Button';
 import { LoadingState } from './components/ui/LoadingState';
 import { RequirePermissions, useAuth } from './components/auth/AuthProvider';
 
@@ -30,31 +42,56 @@ function AppShell({
   onLogout,
 }: {
   user: any;
-  onLogout: () => void;
+  onLogout: () => Promise<void>;
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   return (
     <div className="app-body bg-canvas min-h-screen">
-      <Sidebar isCollapsed={isCollapsed} toggleCollapse={() => setIsCollapsed((p) => !p)} />
+      <Sidebar
+        isCollapsed={isCollapsed}
+        isMobileMenuOpen={isMobileMenuOpen}
+        onNavigate={() => setIsMobileMenuOpen(false)}
+        toggleCollapse={() => setIsCollapsed((p) => !p)}
+      />
       <div className="flex flex-col flex-1">
         <Topbar
           tenantName={user?.tenantName ?? 'Business workspace'}
           userName={user?.name ?? user?.email ?? 'User'}
+          onMenuToggle={() => setIsMobileMenuOpen((open) => !open)}
           onLogout={() => {
-            onLogout();
-            navigate('/login');
+            void onLogout()
+              .then(() => navigate('/login'))
+              .catch((error: unknown) => {
+                toast.error(error instanceof Error ? error.message : 'Could not revoke the current session.');
+                navigate('/login');
+              });
           }}
         />
         <main className="main-content container-max">
           <Routes location={location}>
             <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="dashboard" element={
+              <RequirePermissions permissions="reports.view">
+                <DashboardPage />
+              </RequirePermissions>
+            } />
+            <Route path="stores" element={
+              <RequirePermissions permissions="stores.view">
+                <StoresPage />
+              </RequirePermissions>
+            } />
             <Route path="products" element={
               <RequirePermissions permissions="products.view">
                 <ProductsPage />
+              </RequirePermissions>
+            } />
+            <Route path="inventory" element={
+              <RequirePermissions permissions={['inventory.view', 'stores.view']}>
+                <InventoryPage />
               </RequirePermissions>
             } />
             <Route path="sales" element={
@@ -73,7 +110,7 @@ function AppShell({
               </RequirePermissions>
             } />
             <Route path="returns" element={
-              <RequirePermissions permissions="sales.refund">
+              <RequirePermissions permissions={['sales.refund', 'sales.view']}>
                 <ReturnsPage />
               </RequirePermissions>
             } />
@@ -92,6 +129,17 @@ function AppShell({
                 <CampaignsPage />
               </RequirePermissions>
             } />
+            <Route path="roles" element={
+              <RequirePermissions permissions="roles.view">
+                <RolesPage />
+              </RequirePermissions>
+            } />
+            <Route path="settings" element={
+              <RequirePermissions permissions="business_settings.view">
+                <BusinessSettingsPage />
+              </RequirePermissions>
+            } />
+            <Route path="security" element={<AccountSecurityPage />} />
             <Route path="*" element={<Navigate to="/app/dashboard" replace />} />
           </Routes>
         </main>
@@ -103,13 +151,10 @@ function AppShell({
 function RequireAuth({
   children,
   user,
-  onLogout,
 }: {
   children: React.ReactElement;
   user: any;
-  onLogout: () => void;
 }) {
-  const navigate = useNavigate();
   const { isAuthenticated, isInitializing } = useAuth();
 
   if (isInitializing) {
@@ -117,36 +162,76 @@ function RequireAuth({
   }
 
   if (!isAuthenticated || !user) {
-    navigate('/login', { replace: true });
-    return null;
+    return <Navigate to="/login" replace />;
   }
 
   return children;
 }
 
 function AppRoutes() {
-  const { token, user, isInitializing, login, logout } = useAuth();
+  const { user, isInitializing, sessionError, retrySessionRestore, logout } = useAuth();
 
   if (isInitializing) {
     return <LoadingState message="Restoring your session..." />;
   }
+  if (sessionError) {
+    return (
+      <main className="session-recovery">
+        <h1 className="text-heading-h2">Session could not be restored</h1>
+        <p className="text-body-md text-secondary">{sessionError}</p>
+        <div className="flex gap-3">
+          <Button onClick={retrySessionRestore}>Try again</Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              void logout().catch((error: unknown) => {
+                toast.error(error instanceof Error ? error.message : 'Could not revoke the current session.');
+              });
+            }}
+          >
+            Sign out
+          </Button>
+        </div>
+      </main>
+    );
+  }
 
-  const handleLogin = (newToken: string, newUser: any) => {
-    login(newToken, newUser);
-  };
+  if (user?.tenantStatus && user.tenantStatus !== 'ACTIVE') {
+    return (
+      <Routes>
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/platform/review" element={<PlatformReviewPage />} />
+        <Route path="/platform/accept-invitation" element={<PlatformInvitationPage />} />
+        <Route
+          path="/app/onboarding"
+          element={
+            <RequireAuth user={user}>
+              <TenantOnboardingPage onLogout={logout} />
+            </RequireAuth>
+          }
+        />
+        <Route path="*" element={<Navigate to="/app/onboarding" replace />} />
+      </Routes>
+    );
+  }
 
   return (
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-      <Route path="/register" element={<RegisterPage onRegister={handleLogin} />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/platform/review" element={<PlatformReviewPage />} />
+      <Route path="/platform/accept-invitation" element={<PlatformInvitationPage />} />
       
       {/* Protected app shell */}
       <Route
         path="/app/*"
         element={
-          <RequireAuth user={user} onLogout={logout}>
+          <RequireAuth user={user}>
             <AppShell user={user} onLogout={logout} />
           </RequireAuth>
         }

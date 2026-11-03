@@ -1,0 +1,1 @@
+ALTER TYPE "TenantStatus" ADD VALUE 'REJECTED';
